@@ -108,13 +108,18 @@ std::string kslicer::SlangRewriter::RewriteFuncDecl(clang::FunctionDecl* fDecl)
   std::string retT   = RewriteStdVectorTypeStr(fDecl->getReturnType().getAsString());
   std::string fname  = fDecl->getNameInfo().getName().getAsString();
 
-  if(m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->hasPrefix)          // alter function name if it has any prefix
+  if(m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->prefixName)          // alter function name if it has any prefix
   { 
-    if(fname.find(m_pCurrFuncInfo->prefixName) == std::string::npos)
-      fname = m_pCurrFuncInfo->prefixName + "_" + fname;
+    if(fname.find(*m_pCurrFuncInfo->prefixName) == std::string::npos)
+      fname = *m_pCurrFuncInfo->prefixName + "_" + fname;
   }
   else if(m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->name != fname) // alter function name if was changed
     fname = m_pCurrFuncInfo->name;
+
+  for(const std::string &ns : m_pCurrFuncInfo->namespaces)
+  {
+    fname = ns + "_ns_" + fname;
+  }
 
   std::string result = retT + " " + fname + "(";
 
@@ -311,8 +316,8 @@ bool kslicer::SlangRewriter::VisitCXXMemberCallExpr_Impl(clang::CXXMemberCallExp
     const auto posOfPoint         = exprContent.find(".");
     std::string memberNameA       = exprContent.substr(0, posOfPoint);
     
-    if(m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->hasPrefix)
-      memberNameA = m_pCurrFuncInfo->prefixName + "_" + memberNameA;
+    if(m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->prefixName)
+      memberNameA = *m_pCurrFuncInfo->prefixName + "_" + memberNameA;
 
     if(fname == "size" || fname == "capacity")
     {
@@ -1263,7 +1268,7 @@ void kslicer::SlangCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, cons
 
     buildSH << "slangc " << outFileName.c_str() << targetString.c_str() << kernelName.c_str() << targetSuffix.c_str() << " -I.. ";
     for(auto folder : ignoreFolders)
-      buildSH << "-I" << folder.u8string().c_str() << " ";
+      buildSH << "-I" << folder.string().c_str() << " ";
     if(a_settings.auxShaderCCOptions != "")
       buildSH << " " << a_settings.auxShaderCCOptions.c_str();
     
@@ -1286,7 +1291,7 @@ void kslicer::SlangCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, cons
       kslicer::ApplyJsonToTemplate(templatePathUpdInd.c_str(), outFilePath, currKerneJson);
       buildSH << "slangc " << outFileName.c_str() << targetString.c_str() << kernelName.c_str() << "_UpdateIndirect" << targetSuffix.c_str() << " -I.. ";
       for(auto folder : ignoreFolders)
-       buildSH << "-I" << folder.u8string().c_str() << " ";
+       buildSH << "-I" << folder.string().c_str() << " ";
       buildSH << std::endl;
     }
 
@@ -1297,7 +1302,7 @@ void kslicer::SlangCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, cons
       kslicer::ApplyJsonToTemplate(templatePathRedFin.c_str(), outFilePath, currKerneJson);
       buildSH << "slangc " << outFileName.c_str() << targetString.c_str() << kernelName.c_str() << "_Reduction" << targetSuffix.c_str() << " -I.. ";
       for(auto folder : ignoreFolders)
-       buildSH << "-I" << folder.u8string().c_str() << " ";
+       buildSH << "-I" << folder.string().c_str() << " ";
       buildSH << std::endl;
     }
   }

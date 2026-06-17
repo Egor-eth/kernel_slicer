@@ -203,20 +203,21 @@ public:
       if(found && m_codeInfo.IsKernel(kName))
       {
         //std::cout << func_decl->getNameAsString() << " --> " << kern->getNameAsString() << std::endl;
-        auto p = m_mainFunctions.find(func_decl->getNameAsString());
+        const std::string fname = func_decl->getNameAsString();
+        auto p = m_mainFunctions.find(fname);
         if(p == m_mainFunctions.end())
         {
           kslicer::CFNameInfo info;
-          info.name = func_decl->getNameAsString();
-          info.kernelNames.push_back(kern->getNameAsString());
-          m_mainFunctions[func_decl->getNameAsString()] = info;
+          info.name = fname;
+          info.kernelNames.push_back(kName);
+          m_mainFunctions[fname] = info;
         }
         else
         {
           auto& kernNames = p->second.kernelNames;
-          auto elementId = std::find(kernNames.begin(), kernNames.end(), kern->getNameAsString());
+          auto elementId = std::find(kernNames.begin(), kernNames.end(), kName);
           if(elementId == kernNames.end())
-            kernNames.push_back(kern->getNameAsString());
+            kernNames.push_back(kName);
         }
         
         if(m_codeInfo.mainClassASTNode == nullptr) 

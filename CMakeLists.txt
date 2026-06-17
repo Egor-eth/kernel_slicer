@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(kernel_slicer)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(LLVM_LINK_COMPONENTS support)
 
 set(KSLICER_SOURCE_FILES

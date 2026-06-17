@@ -447,8 +447,8 @@ nlohmann::json kslicer::PrepareJsonForAllCPP(const MainClassInfo& a_classInfo, c
     prefixDataName = a_classInfo.composPrefix.begin()->second;
 
   json data;
-  data["MainInclude"]        = mainInclude.u8string();
-  data["MainIncludeApi"]     = mainIncludeGeneratedAPI.u8string();
+  data["MainInclude"]        = mainInclude.string();
+  data["MainIncludeApi"]     = mainIncludeGeneratedAPI.string();
   data["AdditionalIncludes"] = std::vector<std::string>();
   for(auto file : a_classInfo.cppIncudes)
     data["AdditionalIncludes"].push_back(file);
@@ -626,14 +626,16 @@ nlohmann::json kslicer::PrepareJsonForAllCPP(const MainClassInfo& a_classInfo, c
     }
     else if(var.isContainer && kslicer::IsVectorContainer(var.containerType))
     {
-      std::string cleanName = var.name;
-      ReplaceFirst(cleanName, prefixDataName + "_", "");
+      std::string fullname = var.name;
+      if(var.prefixName) fullname = *var.prefixName + "_" + fullname;
+
+
       json local;
-      local["Name"]      = var.name;
-      local["CleanName"] = cleanName;
+      local["Name"]      = fullname;
+      local["CleanName"] = var.name;
       local["Type"]      = var.type;
       local["DataType"]  = kslicer::CleanTypeName(var.containerDataType);
-      local["HasPrefix"] = var.hasPrefix;
+      local["HasPrefix"] = var.prefixName.has_value();
       ////////////////////////////////////////////////////////////////////
       MainClassInfo::VFH_LEVEL level = MainClassInfo::VFH_LEVEL_1;
       bool isVFHBuffer        = a_classInfo.IsVFHBuffer(var.name, &level);
@@ -651,8 +653,11 @@ nlohmann::json kslicer::PrepareJsonForAllCPP(const MainClassInfo& a_classInfo, c
       std::string cleanDataType = kslicer::CleanTypeName(var.containerDataType);
       if(a_classInfo.composPrefix.find(cleanDataType) == a_classInfo.composPrefix.end() || var.hasIntersectionShader) 
       {
+        std::string fullname = var.name;
+        if(var.prefixName) fullname = *var.prefixName + "_" + fullname;
+
         json local;
-        local["Name"]                  = var.name;
+        local["Name"]                  = fullname;
         local["HasIntersectionShader"] = var.hasIntersectionShader; //
         local["IntersectionImplName"]  = var.intersectionClassName; //
         local["HasIntersectionShader2"]= (a_foundIS2.shaderName != "");
@@ -703,7 +708,7 @@ nlohmann::json kslicer::PrepareJsonForAllCPP(const MainClassInfo& a_classInfo, c
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  data["IncludeClassDecl"]    = mainIncludeGenerated.u8string();
+  data["IncludeClassDecl"]    = mainIncludeGenerated.string();
   data["TotalDescriptorSets"] = a_classInfo.allDescriptorSetsInfo.size(); // #TODO: REFACTOR THIS !!!
   data["TotalDSNumber"]       = a_classInfo.allDescriptorSetsInfo.size(); // #TODO: REFACTOR THIS !!!
 
@@ -728,23 +733,23 @@ nlohmann::json kslicer::PrepareJsonForAllCPP(const MainClassInfo& a_classInfo, c
     if(v.isContainer)
       continue;
 
+    std::string fullname = v.name;
+    if(v.prefixName) fullname = *v.prefixName + "_" + fullname;
+
     json local;
-    local["Name"]       = v.name;
+    local["Name"]       = fullname;
     local["Offset"]     = v.offsetInTargetBuffer;
     local["Size"]       = v.sizeInBytes;
     local["IsArray"]    = v.isArray;
     local["ArraySize"]  = v.arraySize;
     local["IsConst"]    = v.isConst;
-    local["HasPrefix"]  = v.hasPrefix;
-    local["PrefixName"] = v.prefixName;
-    if(v.hasPrefix)
+    local["HasPrefix"]  = v.prefixName.has_value();
+    local["PrefixName"] = v.prefixName.value_or("");
+    if(v.prefixName)
     {
-      std::string cleanName = v.name;
-      ReplaceFirst(cleanName, v.prefixName + "_", "");
-      local["CleanName"] = cleanName;
-    }
-    else
       local["CleanName"] = v.name;
+    }
+
     data["ClassVars"].push_back(local);
   }
 
@@ -758,37 +763,43 @@ nlohmann::json kslicer::PrepareJsonForAllCPP(const MainClassInfo& a_classInfo, c
 
     if(v.kind == kslicer::DATA_KIND::KIND_TEXTURE_SAMPLER_COMBINED)
     {
+      std::string fullname = v.name;
+      if(v.prefixName) fullname = *v.prefixName + "_" + fullname;
       json local;
-      local["Name"]        = v.name;
+      local["Name"]        = fullname;
       local["Usage"]       = "VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT";
       local["NeedUpdate"]  = true;
       local["Format"]      = v.name + "->format()";
       local["AccessSymb"]  = "->";
       local["NeedSampler"] = true;
-      local["HasPrefix"]   = v.hasPrefix;
-      local["PrefixName"]  = v.prefixName;
+      local["HasPrefix"]   = v.prefixName.has_value();
+      local["PrefixName"]  = v.prefixName.value_or("");
       local["WithBuffRef"] = false;
       data["ClassTextureVars"].push_back(local);
     }
     else if(v.kind == kslicer::DATA_KIND::KIND_TEXTURE_SAMPLER_COMBINED_ARRAY)
     {
+      std::string fullname = v.name;
+      if(v.prefixName) fullname = *v.prefixName + "_" + fullname;
       json local;
-      local["Name"] = v.name;
+      local["Name"] = fullname;
       local["Usage"]       = "VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT";
       local["NeedUpdate"]  = true;
       local["Format"]      = v.name + "->format()";
       local["AccessSymb"]  = "->";
       local["NeedSampler"] = true;
-      local["HasPrefix"]   = v.hasPrefix;
-      local["PrefixName"]  = v.prefixName;
+      local["HasPrefix"]   = v.prefixName.has_value();
+      local["PrefixName"]  = v.prefixName.value_or("");
       local["WithBuffRef"] = false;
       data["ClassTexArrayVars"].push_back(local);
       hasTextureArray = true;
     }
     else if(v.IsUsedTexture())
     {
+      std::string fullname = v.name;
+      if(v.prefixName) fullname = *v.prefixName + "_" + fullname;
       json local;
-      local["Name"]       = v.name;
+      local["Name"]       = fullname;
       local["Format"]     = kslicer::InferenceVulkanTextureFormatFromTypeName(a_classInfo.pShaderFuncRewriter->RewriteStdVectorTypeStr(v.containerDataType), a_classInfo.halfFloatTextures);
       local["Usage"]      = "VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT";
       local["NeedUpdate"] = false;
@@ -818,9 +829,9 @@ nlohmann::json kslicer::PrepareJsonForAllCPP(const MainClassInfo& a_classInfo, c
         local["NeedUpdate"] = false;
       }
 
-      local["HasPrefix"]      = v.hasPrefix;
-      local["PrefixName"]     = v.prefixName;
-      if(v.hasPrefix)
+      local["HasPrefix"]      = v.prefixName.has_value();
+      local["PrefixName"]     = v.prefixName.value_or("");
+      if(v.prefixName)
          local["AccessSymb"]     = "->";
       local["WithBuffRef"] = false;
       data["ClassTextureVars"].push_back(local);
@@ -839,15 +850,17 @@ nlohmann::json kslicer::PrepareJsonForAllCPP(const MainClassInfo& a_classInfo, c
       MainClassInfo::VFH_LEVEL level = MainClassInfo::VFH_LEVEL_1;
       bool isVFHBuffer = a_classInfo.IsVFHBuffer(v.name, &level, &hierarchy);
 
+      std::string fullname = v.name;
+      if(v.prefixName) fullname = *v.prefixName + "_" + fullname;
       json local;
-      local["Name"]           = v.name;
+      local["Name"]           = fullname;
       local["SizeOffset"]     = p1->second.offsetInTargetBuffer;
       local["CapacityOffset"] = p2->second.offsetInTargetBuffer;
       local["TypeOfData"]     = kslicer::CleanTypeName(v.containerDataType);
       local["AccessSymb"]     = ".";
       local["NeedSampler"]    = false;
-      local["HasPrefix"]      = v.hasPrefix;
-      local["PrefixName"]     = v.prefixName;
+      local["HasPrefix"]      = v.prefixName.has_value();
+      local["PrefixName"]     = v.prefixName.value_or("");
       local["IsVFHBuffer"]    = isVFHBuffer;
       local["VFHLevel"]       = int(level);
       
@@ -862,7 +875,7 @@ nlohmann::json kslicer::PrepareJsonForAllCPP(const MainClassInfo& a_classInfo, c
       else
         local["Hierarchy"] = json();
 
-      if(v.hasPrefix)
+      if(v.prefixName)
          local["AccessSymb"] = "->";
 
       local["WithBuffRef"] = false;

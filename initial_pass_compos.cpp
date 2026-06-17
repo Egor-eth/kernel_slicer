@@ -35,8 +35,7 @@ std::string kslicer::PerformClassComposition(kslicer::ClassInfo& mainClassInfo, 
   // (2) merge data (dataMembers) and functions (allMemberFunctions)
   //
   for(auto member : implClassInfo.dataMembers) {
-    member.second.name       = prefixName + "_" + member.second.name;
-    member.second.hasPrefix  = true;
+    member.second.name       = member.second.name;
     member.second.prefixName = prefixName;
     mainClassInfo.dataMembers[member.second.name] = member.second;
   }
@@ -61,8 +60,7 @@ void kslicer::PerformInheritanceMerge(kslicer::ClassInfo& mainClassInfo, const k
   for(auto member : baseClassInfo.dataMembers) 
   {
     member.second.name       = member.second.name;
-    member.second.hasPrefix  = false;
-    member.second.prefixName = "";
+    member.second.prefixName = std::nullopt;
     mainClassInfo.dataMembers[member.second.name] = member.second;
   }
    

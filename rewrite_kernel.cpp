@@ -101,7 +101,7 @@ bool kslicer::KernelRewriter::NeedToRewriteMemberExpr(const clang::MemberExpr* e
   auto pPrefix = m_codeInfo->composPrefix.find(thisTypeName);
   std::string classPrefix = "";
   if(m_pCurrFuncInfo != nullptr)
-    classPrefix = m_pCurrFuncInfo->prefixName;
+    classPrefix = m_pCurrFuncInfo->prefixName.value_or("");
   
   if(m_pCurrFuncInfo != nullptr && pPrefix != m_codeInfo->composPrefix.end())
   {
@@ -422,8 +422,8 @@ bool kslicer::KernelRewriter::VisitCXXMemberCallExpr_Impl(CXXMemberCallExpr* f)
     const auto posOfPoint         = exprContent.find(".");
     std::string memberNameA       = exprContent.substr(0, posOfPoint);
     
-    if(processFuncMember && m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->hasPrefix)
-      memberNameA = m_pCurrFuncInfo->prefixName + "_" + memberNameA;
+    if(processFuncMember && m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->prefixName)
+      memberNameA = *m_pCurrFuncInfo->prefixName + "_" + memberNameA;
 
     if(fname == "size" || fname == "capacity")
     {

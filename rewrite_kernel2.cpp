@@ -65,7 +65,7 @@ bool kslicer::FunctionRewriter2::NeedToRewriteMemberExpr(const clang::MemberExpr
   auto pPrefix = m_codeInfo->composPrefix.find(thisTypeName);
   std::string classPrefix = "";
   if(m_pCurrFuncInfo != nullptr)
-    classPrefix = m_pCurrFuncInfo->prefixName;
+    classPrefix = m_pCurrFuncInfo->prefixName.value_or("");
   
   if(m_pCurrFuncInfo != nullptr && pPrefix != m_codeInfo->composPrefix.end())
   {

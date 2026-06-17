@@ -48,13 +48,18 @@ std::string kslicer::ISPCRewriter::RewriteFuncDecl(clang::FunctionDecl* fDecl)
   std::string retT   = RewriteStdVectorTypeStr(fDecl->getReturnType().getAsString());
   std::string fname  = fDecl->getNameInfo().getName().getAsString();
 
-  if(m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->hasPrefix)          // alter function name if it has any prefix
+  if(m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->prefixName)          // alter function name if it has any prefix
   { 
-    if(fname.find(m_pCurrFuncInfo->prefixName) == std::string::npos)
-      fname = m_pCurrFuncInfo->prefixName + "_" + fname;
+    if(fname.find(*m_pCurrFuncInfo->prefixName) == std::string::npos)
+      fname = *m_pCurrFuncInfo->prefixName + "_" + fname;
   }
   else if(m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->name != fname) // alter function name if was changed
     fname = m_pCurrFuncInfo->name;
+
+  for(const std::string &ns : m_pCurrFuncInfo->namespaces)
+  {
+    fname = ns + "_ns_" + fname;
+  }
 
   std::string result = retT + " " + fname + "(";
 
@@ -151,8 +156,8 @@ bool kslicer::ISPCRewriter::VisitCXXMemberCallExpr_Impl(clang::CXXMemberCallExpr
       const auto posOfPoint         = exprContent.find(".");
       std::string memberNameA       = exprContent.substr(0, posOfPoint);
       
-      if(processFuncMember && m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->hasPrefix)
-        memberNameA = m_pCurrFuncInfo->prefixName + "_" + memberNameA;
+      if(processFuncMember && m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->prefixName)
+        memberNameA = *m_pCurrFuncInfo->prefixName + "_" + memberNameA;
   
       if(fname == "size" || fname == "capacity")
       {
@@ -511,7 +516,7 @@ void kslicer::ISPCCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, const
   std::filesystem::path kernelHeader = mainClassFileName;
   kernelHeader.replace_extension("");
   kernelHeader.concat("_kernels.h");
-  std::string build = this->BuildCommand(outFileName.u8string()) + " -o " + kernelTarget.u8string() + " -h " + kernelHeader.u8string();
+  std::string build = this->BuildCommand(outFileName.string()) + " -o " + kernelTarget.string() + " -h " + kernelHeader.string();
   buildSH << build.c_str() << " ";
   for(auto folder : ignoreFolders)
     buildSH << "-I" << folder.c_str() << " ";

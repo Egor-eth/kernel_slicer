@@ -7,7 +7,9 @@
 #include "clang/AST/DeclTemplate.h"
 
 #include <clang/AST/ASTContext.h>
+#include <clang/AST/DeclCXX.h>
 #include <clang/AST/TypeBase.h>
+#include <clang/Basic/LLVM.h>
 #include <optional>
 #include <vector>
 #include <queue>
@@ -151,18 +153,26 @@ public:
     if(m_patternImpl.IsInExcludedFolder(fileName))
       return true;
 
-    if(fileName.find(".h") == std::string::npos && fileName.find(".cpp") == std::string::npos && fileName.find(".cxx") == std::string::npos)
+    if(fileName.find(".h") == std::string::npos && fileName.find(".cpp") == std::string::npos && fileName.find(".cxx") == std::string::npos) // XXX: why?
       return true;
 
     kslicer::FuncData func;
-    func.name = f->getNameAsString();
-    auto ddPos = callText.find("::"); // support for 'BaseClass::Func(...)'
-    if(ddPos != std::string::npos)
+    auto [ns, fnm] = kslicer::SplitNamespacesFromQName(f->getQualifiedNameAsString());
+    func.name = std::move(fnm);
+    func.namespaces = std::move(ns);
+
+    if(!func.namespaces.empty() && (func.namespaces.back() == m_patternImpl.mainClassName))
     {
-      const std::string baseClassName = callText.substr(0, ddPos);
-      if(baseClassName != m_patternImpl.mainClassName && m_patternImpl.mainClassNames.find(baseClassName) != m_patternImpl.mainClassNames.end())
-        func.name = baseClassName + "_" + func.name;
+      func.namespaces = {};
     }
+
+    //auto ddPos = func.name.rfind("::"); // support for 'BaseClass::Func(...)'
+    //if(ddPos != std::string::npos)
+    //{
+    //  const std::string baseClassName = callText.substr(0, ddPos);
+    //  if(baseClassName != m_patternImpl.mainClassName && m_patternImpl.mainClassNames.find(baseClassName) != m_patternImpl.mainClassNames.end())
+    //    func.name = baseClassName + "_" + func.name;
+    //}
 
     const std::string fsrc = kslicer::GetRangeSourceCode(f->getSourceRange(), m_compiler);
     if(fsrc.find("{") == std::string::npos) // if don't have full source code in this node, just decl, need to obtain correct node
@@ -183,8 +193,7 @@ public:
 
         const auto pPrefix  = m_patternImpl.composPrefix.find(typeName);
         if(pPrefix != m_patternImpl.composPrefix.end()) {
-          func.name        = pPrefix->second + "_" + func.name;
-          func.hasPrefix   = true;
+          func.name        = func.name;
           func.prefixName  = pPrefix->second;
           auto pNodeByDecl = m_patternImpl.allMemberFunctions.find(func.name);
           if(pNodeByDecl != m_patternImpl.allMemberFunctions.end())
@@ -237,8 +246,7 @@ public:
       if(pPrefix != m_patternImpl.composPrefix.end())
       {
         if(func.name.find(pPrefix->second) == std::string::npos) { // please see code upper, probably we already changed the name if it is a member function
-          func.name        = pPrefix->second + "_" + func.name;
-          func.hasPrefix   = true;
+          func.name        = func.name;
           func.prefixName  = pPrefix->second;
         }
       }
@@ -516,8 +524,6 @@ public:
     auto baseName = kslicer::GetRangeSourceCode(baseExpr->getSourceRange(), m_compiler);
     auto member   = kslicer::ExtractMemberInfo(pFieldDecl, m_compiler.getASTContext());
     if(prefixName != "") {
-      member.name        = prefixName + "_" + member.name;
-      member.hasPrefix   = true;
       member.prefixName  = pPrefix->second;
     }
 
@@ -1044,7 +1050,7 @@ bool kslicer::MainClassInfo::IsInExcludedFolder(const std::string& fileName)
   bool exclude = false;
   for(auto folder : this->ignoreFolders)  //
   {
-    if(fileName.find(folder.u8string()) != std::string::npos)
+    if(fileName.find(folder.string()) != std::string::npos)
     {
       exclude = true;
       break;
@@ -1074,7 +1080,7 @@ bool kslicer::MainClassInfo::NeedToProcessDeclInFile(const std::string a_fileNam
   bool needInsertToKernels = false;             // do we have to process this declaration to further insert it to GLSL/CL ?
   for(auto folder : this->processFolders)       //
   {
-    if(a_fileName.find(folder.u8string()) != std::string::npos)
+    if(a_fileName.find(folder.string()) != std::string::npos)
     {
       needInsertToKernels = true;
       break;
@@ -1085,7 +1091,7 @@ bool kslicer::MainClassInfo::NeedToProcessDeclInFile(const std::string a_fileNam
   {
     for(auto folder : this->ignoreFolders)        // consider ["maypath/AA"] in 'processFolders' and ["maypath/AA/BB"] in 'ignoreFolders'
     {                                             // we should definitely ignore such definitions
-      if(a_fileName.find(folder.u8string()) != std::string::npos)
+      if(a_fileName.find(folder.string()) != std::string::npos)
       {
         needInsertToKernels = false;
         break;

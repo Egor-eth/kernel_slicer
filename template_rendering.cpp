@@ -439,7 +439,7 @@ void kslicer::ApplyJsonToTemplate(const std::filesystem::path& a_declTemplateFil
   env.set_trim_blocks(true);
   env.set_lstrip_blocks(true);
 
-  const std::string declTemplateFilePath = a_declTemplateFilePath.u8string();
+  const std::string declTemplateFilePath = a_declTemplateFilePath.string();
   
   inja::Template temp = env.parse_template(declTemplateFilePath.c_str());
   std::string result  = env.render(temp, a_data);

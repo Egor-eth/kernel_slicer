@@ -211,9 +211,15 @@ namespace kslicer
     bool               isVirtual = false;
     int                depthUse = 0;    ///!< depth Of Usage; 0 -- for kernels; 1 -- for functions called from kernel; 2 -- for functions called from functions called from kernels
                                         ///!< please note that if function is called under different depth, maximum depth should be stored in this variable;
-    bool hasPrefix = false;
-    std::string prefixName;
+    std::optional<std::string> prefixName;
     std::unordered_set<std::string> calledMembers;
+
+
+    /**
+     * For non-member functions contains all namespaces from left to right (a::b::c::d -> [a, b, c, d])
+     * For member functions contains parent class name with all its namespaces (a::b::Class -> [a, b, Class])
+     */
+    std::vector<std::string> namespaces;
   
     std::string thisTypeName;                                ///!< currently filled for VFH only, TODO: fill for other
     std::string declRewritten;                               ///!< currently filled for VFH only, TODO: fill for other
@@ -471,9 +477,8 @@ namespace kslicer
     bool isSingle          = false; ///<! single struct inside buffer, not a vector (vector with size() == 1), special case for all_references and other service needs
     bool bindWithRef       = false; ///<! if bound with buffer reference
 
-    bool hasPrefix = false;
     bool hasIntersectionShader = false; ///<! indicate that this acceleration structure has user-defined intersection procedure
-    std::string prefixName;
+    std::optional<std::string> prefixName;
 
     DATA_USAGE usage = DATA_USAGE::USAGE_USER;         ///<! if this is service and 'implicit' data which was agged by generator, not by user;
     TEX_ACCESS tmask = TEX_ACCESS::TEX_ACCESS_NOTHING; ///<! store texture access flags if this data member is a texture
@@ -1534,7 +1539,10 @@ struct IShaderCompiler
   std::string ClearNameFromBegin(const std::string& a_str);
   std::string FixLamdbaSourceCode(std::string a_str);
   std::string SubstrBetween(const std::string& a_str, const std::string& first, const std::string& second);
-  
+  std::string MoveNamespacesToIdentifier(std::string a_str);
+  std::pair<std::vector<std::string>, std::string> SplitNamespacesFromQName(const std::string &name);
+
+
   struct NameFlagsPair
   {
     std::string         name;

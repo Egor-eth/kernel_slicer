@@ -202,6 +202,8 @@ std::string kslicer::FixLamdbaSourceCode(std::string a_str)
   return a_str;
 }
 
+
+
 std::string kslicer::SubstrBetween(const std::string& a_str, const std::string& first, const std::string& second)
 {
   auto pos1 = a_str.find(first);
@@ -209,6 +211,34 @@ std::string kslicer::SubstrBetween(const std::string& a_str, const std::string& 
   if(pos1 != std::string::npos && pos2 != std::string::npos)
     return a_str.substr(pos1+1, pos2 - pos1 - 1);
   return a_str;
+}
+
+std::string kslicer::MoveNamespacesToIdentifier(std::string a_str)
+{
+  std::string::size_type pos = 0;
+  while((pos = a_str.find("::", pos)) != std::string::npos)
+  {
+    a_str.replace(pos, 2, "_ns_");
+  }
+  return a_str;
+}
+
+std::pair<std::vector<std::string>, std::string> kslicer::SplitNamespacesFromQName(const std::string &name)
+{
+  std::vector<std::string> res;
+
+  std::string::size_type pos = 0;
+  std::string::size_type nextpos = 0;
+
+  while((nextpos = name.find("::", pos)) != std::string::npos)
+  {
+    res.push_back(name.substr(pos, nextpos - pos));
+    pos = nextpos + 2;
+  }
+
+  std::string n = name.substr(pos);
+
+  return {res, n};
 }
 
 bool kslicer::IsTexture(clang::QualType a_qt)

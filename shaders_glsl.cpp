@@ -810,13 +810,38 @@ std::string kslicer::GLSLFunctionRewriter::RewriteFuncDecl(clang::FunctionDecl* 
   std::string retT   = RewriteStdVectorTypeStr(fDecl->getReturnType().getAsString());
   std::string fname  = fDecl->getNameInfo().getName().getAsString();
 
-  if(m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->hasPrefix)          // alter function name if it has any prefix
-  { 
-    if(fname.find(m_pCurrFuncInfo->prefixName) == std::string::npos)
-      fname = m_pCurrFuncInfo->prefixName + "_" + fname;
+
+  /*std::string namespace_prefix = "";
+  for(const clang::DeclContext *dc = fDecl->getDeclContext(); dc; dc = dc->getParent())
+  {
+    if(const clang::NamespaceDecl *ns = clang::dyn_cast<clang::NamespaceDecl>(dc))
+    {
+      namespace_prefix = ns->getName().str() + "_" + namespace_prefix; 
+    }
+  }*/
+
+
+  if(m_pCurrFuncInfo != nullptr) {
+    if(m_pCurrFuncInfo->prefixName)          // alter function name if it has any prefix
+    { 
+      if(fname.find(*m_pCurrFuncInfo->prefixName) == std::string::npos) {
+        fname = *m_pCurrFuncInfo->prefixName + "_" + fname;
+      }
+    }
+    else if(m_pCurrFuncInfo->name != fname) {// alter function name if was changed
+      fname = m_pCurrFuncInfo->name;
+    }
+
+    for(const std::string &ns : m_pCurrFuncInfo->namespaces)
+    {
+      fname = ns + "_ns_" + fname;
+    }
   }
-  else if(m_pCurrFuncInfo != nullptr && m_pCurrFuncInfo->name != fname) // alter function name if was changed
-    fname = m_pCurrFuncInfo->name;
+  /*if(!namespace_prefix.empty()) //alter function name if it has any namespace
+  {
+    fname = "__" + namespace_prefix + "_" + fname;
+  }*/
+
 
   std::string result = retT + " " + fname + "(";
 
@@ -986,6 +1011,7 @@ bool kslicer::GLSLFunctionRewriter::VisitCallExpr_Impl(clang::CallExpr* call)
   
   const std::string debugText = GetRangeSourceCode(call->getSourceRange(), m_compiler);
   const std::string fname = fDecl->getNameInfo().getName().getAsString();
+  const std::string fqname = fDecl->getQualifiedNameAsString();
   ///////////////////////////////////////////////////////////////////////
   std::string makeSmth = "";
   if(fname == "make_float3x3_by_columns") // mat3(a,b,c) == make_float3x3_by_columns(a,b,c)
@@ -997,8 +1023,10 @@ bool kslicer::GLSLFunctionRewriter::VisitCallExpr_Impl(clang::CallExpr* call)
   auto pVecMaker = m_vecReplacements.find(makeSmth);
   ///////////////////////////////////////////////////////////////////////
 
+  if(!WasNotRewrittenYet(call)) return true;
+
   auto pFoundSmth = m_funReplacements.find(fname);
-  if(fname == "to_float3" && call->getNumArgs() == 1 && WasNotRewrittenYet(call) )
+  if(fname == "to_float3" && call->getNumArgs() == 1)
   {
     const auto qt = call->getArg(0)->getType();
     const std::string typeName = qt.getAsString();
@@ -1015,21 +1043,21 @@ bool kslicer::GLSLFunctionRewriter::VisitCallExpr_Impl(clang::CallExpr* call)
       MarkRewritten(call);
     }
   }
-  else if(makeSmth != "" && pVecMaker != m_vecReplacements.end() && call->getNumArgs() !=0 && WasNotRewrittenYet(call) )
+  else if(makeSmth != "" && pVecMaker != m_vecReplacements.end() && call->getNumArgs() !=0)
   {
     const std::string rewrittenRes = pVecMaker->second + "(" + CompleteFunctionCallRewrite(call);
     
     ReplaceTextOrWorkAround(call->getSourceRange(), rewrittenRes);
     MarkRewritten(call);
   }
-  else if(fname == "mul4x4x4" && call->getNumArgs() == 2 && WasNotRewrittenYet(call))
+  else if(fname == "mul4x4x4" && call->getNumArgs() == 2)
   {
     const std::string A = RecursiveRewrite(call->getArg(0));
     const std::string B = RecursiveRewrite(call->getArg(1));
     ReplaceTextOrWorkAround(call->getSourceRange(), "(" + A + "*" + B + ")");
     MarkRewritten(call);
   }
-  else if(fname == "lerp" && call->getNumArgs() == 3 && WasNotRewrittenYet(call))
+  else if(fname == "lerp" && call->getNumArgs() == 3)
   {
     const std::string A = RecursiveRewrite(call->getArg(0));
     const std::string B = RecursiveRewrite(call->getArg(1));
@@ -1037,26 +1065,26 @@ bool kslicer::GLSLFunctionRewriter::VisitCallExpr_Impl(clang::CallExpr* call)
     ReplaceTextOrWorkAround(call->getSourceRange(), "mix(" + A + ", " + B + ", " + C + ")");
     MarkRewritten(call);
   }
-  else if(fname == "atan2" && call->getNumArgs() == 2 && WasNotRewrittenYet(call))
+  else if(fname == "atan2" && call->getNumArgs() == 2)
   {
     const std::string arg1 = RecursiveRewrite(call->getArg(0));
     const std::string arg2 = RecursiveRewrite(call->getArg(1));
     ReplaceTextOrWorkAround(call->getSourceRange(), "atan(" + arg1 + "," + arg2 + ")");
     MarkRewritten(call);
   }
-  else if((fname == "as_int32" || fname == "as_int") && call->getNumArgs() == 1 && WasNotRewrittenYet(call))
+  else if((fname == "as_int32" || fname == "as_int") && call->getNumArgs() == 1)
   {
     const std::string text = RecursiveRewrite(call->getArg(0));
     ReplaceTextOrWorkAround(call->getSourceRange(), "floatBitsToInt(" + text + ")");
     MarkRewritten(call);
   }
-  else if((fname == "as_uint32" || fname == "as_uint") && call->getNumArgs() == 1 && WasNotRewrittenYet(call))
+  else if((fname == "as_uint32" || fname == "as_uint") && call->getNumArgs() == 1)
   {
     const std::string text = RecursiveRewrite(call->getArg(0));
     ReplaceTextOrWorkAround(call->getSourceRange(), "floatBitsToUint(" + text + ")");
     MarkRewritten(call);
   }
-  else if((fname == "as_float" || fname == "as_float32")  && call->getNumArgs() == 1 && WasNotRewrittenYet(call))
+  else if((fname == "as_float" || fname == "as_float32")  && call->getNumArgs() == 1)
   {
     const std::string text  = RecursiveRewrite(call->getArg(0));
     const auto qtOfArg      = call->getArg(0)->getType();
@@ -1070,21 +1098,27 @@ bool kslicer::GLSLFunctionRewriter::VisitCallExpr_Impl(clang::CallExpr* call)
     ReplaceTextOrWorkAround(call->getSourceRange(), lastRewrittenText);
     MarkRewritten(call);
   }
-  else if((fname == "inverse4x4" || fname == "inverse3x3" || fname == "inverse2x2") && call->getNumArgs() == 1 && WasNotRewrittenYet(call))
+  else if((fname == "inverse4x4" || fname == "inverse3x3" || fname == "inverse2x2") && call->getNumArgs() == 1)
   {
     const std::string text = RecursiveRewrite(call->getArg(0));
     ReplaceTextOrWorkAround(call->getSourceRange(), "inverse(" + text + ")");
     MarkRewritten(call);
   }
-  else if(pFoundSmth != m_funReplacements.end() && WasNotRewrittenYet(call))
+  else if(pFoundSmth != m_funReplacements.end())
   {
     std::string lastRewrittenText = pFoundSmth->second + "(" + CompleteFunctionCallRewrite(call);
     ReplaceTextOrWorkAround(call->getSourceRange(), lastRewrittenText);
     MarkRewritten(call);
   }
-  else if(fDecl->isInStdNamespace() && WasNotRewrittenYet(call)) // remove "std::"
+  else if((fDecl->isInStdNamespace()) || fqname.starts_with("LiteMath::")) // remove "std::"
   {
     std::string lastRewrittenText = fname + "(" + CompleteFunctionCallRewrite(call);
+    ReplaceTextOrWorkAround(call->getSourceRange(), lastRewrittenText);
+    MarkRewritten(call);
+  }
+  else
+  {
+    std::string lastRewrittenText = MoveNamespacesToIdentifier(fqname) + "(" + CompleteFunctionCallRewrite(call);
     ReplaceTextOrWorkAround(call->getSourceRange(), lastRewrittenText);
     MarkRewritten(call);
   }

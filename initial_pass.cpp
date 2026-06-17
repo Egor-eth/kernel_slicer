@@ -665,7 +665,7 @@ void kslicer::CheckInterlanIncInExcludedFolders(const std::vector<fs::path>& a_f
     for (const auto& entry : fs::directory_iterator(path)) {
       if(entry.is_directory())
         continue;
-      const std::string fileName = entry.path().u8string();
+      const std::string fileName = entry.path().string();
       bool found = false;
       for(const auto fname : stopList) {
         if(fileName.find(fname) != std::string::npos) {
