@@ -7,6 +7,11 @@
   #include <sys/types.h>
 #endif
 
+#include <template_files.h>
+#include <filesystem>
+
+static const std::filesystem::path templates_glsl_path(kslicer::_templates_glsl_path);
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -35,17 +40,16 @@ void kslicer::GLSLCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, const
   // generate header for all used functions in GLSL code
   //
   std::string headerCommon = "common" + ToLowerCase(m_suffix) + ".h";
-  std::filesystem::path templatesFolder("templates_glsl");
-  kslicer::ApplyJsonToTemplate(templatesFolder / "common_generated.h", shaderPath / headerCommon, a_kernelsJson);
+  kslicer::ApplyJsonToTemplate(templates_glsl_path / "common_generated.h", shaderPath / headerCommon, a_kernelsJson);
 
   // now generate all glsl shaders
   //
-  const std::filesystem::path templatePath       = templatesFolder / (a_codeInfo->megakernelRTV ? "generated_mega.glsl" : "generated.glsl");
-  const std::filesystem::path templatePathUpdInd = templatesFolder / "update_indirect.glsl";
-  const std::filesystem::path templatePathRedFin = templatesFolder / "reduction_finish.glsl";
-  const std::filesystem::path templatePathIntShd = templatesFolder / "intersection_shader.glsl";
-  const std::filesystem::path templatePathHitShd = templatesFolder / "closest_hit_shader.glsl";
-  const std::filesystem::path templatePathCalShd = templatesFolder / "callable_shader.glsl";
+  const std::filesystem::path templatePath       = templates_glsl_path / (a_codeInfo->megakernelRTV ? "generated_mega.glsl" : "generated.glsl");
+  const std::filesystem::path templatePathUpdInd = templates_glsl_path / "update_indirect.glsl";
+  const std::filesystem::path templatePathRedFin = templates_glsl_path / "reduction_finish.glsl";
+  const std::filesystem::path templatePathIntShd = templates_glsl_path / "intersection_shader.glsl";
+  const std::filesystem::path templatePathHitShd = templates_glsl_path / "closest_hit_shader.glsl";
+  const std::filesystem::path templatePathCalShd = templates_glsl_path / "callable_shader.glsl";
 
   nlohmann::json copy, kernels, intersections;
   for (auto& el : a_kernelsJson.items())
@@ -203,13 +207,13 @@ void kslicer::GLSLCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, const
   if(a_codeInfo->usedServiceCalls.find("memcpy") != a_codeInfo->usedServiceCalls.end())
   {
     nlohmann::json dummy;
-    kslicer::ApplyJsonToTemplate(templatesFolder / "z_memcpy.glsl", shaderPath / "z_memcpy.comp", dummy); // just file copy actually
+    kslicer::ApplyJsonToTemplate(templates_glsl_path / "z_memcpy.glsl", shaderPath / "z_memcpy.comp", dummy); // just file copy actually
     buildSH << "glslangValidator -V z_memcpy.comp -o z_memcpy.comp.spv" << std::endl;
   }
   if(a_codeInfo->usedServiceCalls.find("MatMulTranspose") != a_codeInfo->usedServiceCalls.end())
   {
     nlohmann::json dummy;
-    kslicer::ApplyJsonToTemplate(templatesFolder / "z_matMulTranspose.glsl", shaderPath / "z_matMulTranspose.comp", dummy); // just file copy actually
+    kslicer::ApplyJsonToTemplate(templates_glsl_path / "z_matMulTranspose.glsl", shaderPath / "z_matMulTranspose.comp", dummy); // just file copy actually
     buildSH << "glslangValidator -V z_matMulTranspose.comp -o z_matMulTranspose.comp.spv" << std::endl;
   }
 
@@ -223,8 +227,8 @@ void kslicer::GLSLCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, const
         nlohmann::json params;
         params["Type"] = scanImpl.second.dataTypeName;
 
-        kslicer::ApplyJsonToTemplate(templatesFolder / "z_scan_block.glsl",     shaderPath / ("z_scan_" + scanImpl.second.dataTypeName + "_block.comp"), params);
-        kslicer::ApplyJsonToTemplate(templatesFolder / "z_scan_propagate.glsl", shaderPath / ("z_scan_" + scanImpl.second.dataTypeName + "_propagate.comp"), params);
+        kslicer::ApplyJsonToTemplate(templates_glsl_path / "z_scan_block.glsl",     shaderPath / ("z_scan_" + scanImpl.second.dataTypeName + "_block.comp"), params);
+        kslicer::ApplyJsonToTemplate(templates_glsl_path / "z_scan_propagate.glsl", shaderPath / ("z_scan_" + scanImpl.second.dataTypeName + "_propagate.comp"), params);
         buildSH << "glslangValidator -V z_scan_" + scanImpl.second.dataTypeName + "_block.comp     -o z_scan_" + scanImpl.second.dataTypeName + "_block.comp.spv" << std::endl;
         buildSH << "glslangValidator -V z_scan_" + scanImpl.second.dataTypeName + "_propagate.comp -o z_scan_" + scanImpl.second.dataTypeName + "_propagate.comp.spv" << std::endl;
       }
@@ -242,10 +246,10 @@ void kslicer::GLSLCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, const
         params["Lambda"] = sortImpl.second.lambdaSource;
         params["Suffix"] = ToLowerCase(a_codeInfo->mainClassSuffix);
 
-        kslicer::ApplyJsonToTemplate(templatesFolder / "z_bitonic_pass.glsl",  shaderPath / ("z_bitonic_" + sortImpl.second.dataTypeName + "_pass.comp"), params);
-        kslicer::ApplyJsonToTemplate(templatesFolder / "z_bitonic_512.glsl",   shaderPath / ("z_bitonic_" + sortImpl.second.dataTypeName + "_512.comp"), params);
-        kslicer::ApplyJsonToTemplate(templatesFolder / "z_bitonic_1024.glsl",  shaderPath / ("z_bitonic_" + sortImpl.second.dataTypeName + "_1024.comp"), params);
-        kslicer::ApplyJsonToTemplate(templatesFolder / "z_bitonic_2048.glsl",  shaderPath / ("z_bitonic_" + sortImpl.second.dataTypeName + "_2048.comp"), params);
+        kslicer::ApplyJsonToTemplate(templates_glsl_path / "z_bitonic_pass.glsl",  shaderPath / ("z_bitonic_" + sortImpl.second.dataTypeName + "_pass.comp"), params);
+        kslicer::ApplyJsonToTemplate(templates_glsl_path / "z_bitonic_512.glsl",   shaderPath / ("z_bitonic_" + sortImpl.second.dataTypeName + "_512.comp"), params);
+        kslicer::ApplyJsonToTemplate(templates_glsl_path / "z_bitonic_1024.glsl",  shaderPath / ("z_bitonic_" + sortImpl.second.dataTypeName + "_1024.comp"), params);
+        kslicer::ApplyJsonToTemplate(templates_glsl_path / "z_bitonic_2048.glsl",  shaderPath / ("z_bitonic_" + sortImpl.second.dataTypeName + "_2048.comp"), params);
 
         buildSH << "glslangValidator -V z_bitonic_" + sortImpl.second.dataTypeName + "_pass.comp -o z_bitonic_" + sortImpl.second.dataTypeName + "_pass.comp.spv" << std::endl;
         buildSH << "glslangValidator -V z_bitonic_" + sortImpl.second.dataTypeName + "_512.comp  -o z_bitonic_" + sortImpl.second.dataTypeName + "_512.comp.spv"  << std::endl;
@@ -258,9 +262,9 @@ void kslicer::GLSLCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, const
   if(needRTDummies)
   {
     nlohmann::json params;
-    kslicer::ApplyJsonToTemplate(templatesFolder / "z_trace_rchit.glsl", shaderPath / "z_trace_rchit.glsl", params);
-    kslicer::ApplyJsonToTemplate(templatesFolder / "z_trace_rmiss.glsl", shaderPath / "z_trace_rmiss.glsl", params);
-    kslicer::ApplyJsonToTemplate(templatesFolder / "z_trace_smiss.glsl", shaderPath / "z_trace_smiss.glsl", params);
+    kslicer::ApplyJsonToTemplate(templates_glsl_path / "z_trace_rchit.glsl", shaderPath / "z_trace_rchit.glsl", params);
+    kslicer::ApplyJsonToTemplate(templates_glsl_path / "z_trace_rmiss.glsl", shaderPath / "z_trace_rmiss.glsl", params);
+    kslicer::ApplyJsonToTemplate(templates_glsl_path / "z_trace_smiss.glsl", shaderPath / "z_trace_smiss.glsl", params);
 
     buildSH << "glslangValidator -V --target-env vulkan1.2 -S rchit z_trace_rchit.glsl -o z_trace_rchit.glsl.spv" << std::endl;
     buildSH << "glslangValidator -V --target-env vulkan1.2 -S rmiss z_trace_rmiss.glsl -o z_trace_rmiss.glsl.spv" << std::endl;

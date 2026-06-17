@@ -54,6 +54,8 @@
 //using namespace clang;
 #include "template_rendering.h"
 
+#include <template_files.h>
+
 using kslicer::KernelInfo;
 using kslicer::DataMemberInfo;
 
@@ -204,7 +206,7 @@ int main(int argc, const char **argv)
   std::filesystem::path mainFolderPath  = fileName.parent_path();
   std::string mainClassName   = "TestClass";
   std::string selfFolder      = "";
-  std::string stdlibFolder    = "";
+  std::string stdlibFolder    = kslicer::_tinystl_path;
   std::string patternName     = "ipv";
   std::string shaderCCName    = "clspv";
   std::string suffix          = "_Generated";

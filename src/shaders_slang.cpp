@@ -6,6 +6,12 @@
   #include <sys/types.h>
 #endif
 
+#include <template_files.h>
+#include <filesystem>
+
+static const std::filesystem::path templates_slang_path(kslicer::_templates_slang_path);
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1213,12 +1219,11 @@ void kslicer::SlangCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, cons
   // generate header for all used functions in GLSL code
   //
   std::string headerCommon = "common" + ToLowerCase(m_suffix) + "_slang.h";
-  std::filesystem::path templatesFolder("templates_slang");
-  kslicer::ApplyJsonToTemplate(templatesFolder / "common_generated_slang.h", shaderPath / headerCommon, a_kernelsJson);
+  kslicer::ApplyJsonToTemplate(templates_slang_path / "common_generated_slang.h", shaderPath / headerCommon, a_kernelsJson);
 
-  const std::filesystem::path templatePath       = templatesFolder / (a_codeInfo->megakernelRTV ? "generated_mega.slang" : "generated.slang");
-  const std::filesystem::path templatePathUpdInd = templatesFolder / "update_indirect.slang";
-  const std::filesystem::path templatePathRedFin = templatesFolder / "reduction_finish.slang";
+  const std::filesystem::path templatePath       = templates_slang_path / (a_codeInfo->megakernelRTV ? "generated_mega.slang" : "generated.slang");
+  const std::filesystem::path templatePathUpdInd = templates_slang_path / "update_indirect.slang";
+  const std::filesystem::path templatePathRedFin = templates_slang_path / "reduction_finish.slang";
   
   nlohmann::json copy, kernels, intersections;
   for (auto& el : a_kernelsJson.items())
@@ -1305,7 +1310,7 @@ void kslicer::SlangCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, cons
   if(a_codeInfo->usedServiceCalls.find("memcpy") != a_codeInfo->usedServiceCalls.end())
   {
     nlohmann::json dummy;
-    kslicer::ApplyJsonToTemplate(templatesFolder / "z_memcpy.slang", shaderPath / "z_memcpy.slang", dummy); // just file copy actually
+    kslicer::ApplyJsonToTemplate(templates_slang_path / "z_memcpy.slang", shaderPath / "z_memcpy.slang", dummy); // just file copy actually
     buildSH << "slangc z_memcpy.slang -o z_memcpy.comp.spv" << std::endl;
   }
 

@@ -2,13 +2,18 @@
 #include "template_rendering.h"
 #include "class_gen.h"
 #include "shaders_cuda.h"
+#include <template_files.h>
+#include <filesystem>
+
+static const std::filesystem::path templates_cuda_path(kslicer::_templates_cuda_path);
+
 
 void kslicer::CudaCodeGen::GenerateHost(std::string fullSuffix, nlohmann::json jsonHost, kslicer::MainClassInfo& a_mainClass, const kslicer::TextGenSettings& a_settings)
 {
   std::string suffix = ".cu";
   if(Name() == "hip")
     suffix = ".hip";
-  kslicer::ApplyJsonToTemplate("templates_cuda/gen_class.cu", fullSuffix + suffix, jsonHost);
+  kslicer::ApplyJsonToTemplate(templates_cuda_path / "gen_class.cu", fullSuffix + suffix, jsonHost);
 }
 
 std::string kslicer::GetControlFuncDeclCUDA(const clang::FunctionDecl* fDecl, clang::CompilerInstance& compiler, bool a_gpuSuffix)

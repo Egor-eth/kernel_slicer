@@ -2,15 +2,21 @@
 #include "template_rendering.h"
 #include "class_gen.h"
 
+#include <template_files.h>
+#include <filesystem>
+
+static const std::filesystem::path templates_wk_path(kslicer::_templates_wk_path);
+
+
 void kslicer::WGPUCodeGen::GenerateHost(std::string fullSuffix, nlohmann::json jsonHost, kslicer::MainClassInfo& a_mainClass, const kslicer::TextGenSettings& a_settings)
 {
-  kslicer::ApplyJsonToTemplate("templates_wk/wk_class.h",   fullSuffix + ".h",   jsonHost);
-  kslicer::ApplyJsonToTemplate("templates_wk/wk_class.cpp", fullSuffix + ".cpp", jsonHost);
+  kslicer::ApplyJsonToTemplate(templates_wk_path / "wk_class.h",   fullSuffix + ".h",   jsonHost);
+  kslicer::ApplyJsonToTemplate(templates_wk_path / "wk_class.cpp", fullSuffix + ".cpp", jsonHost);
 }
 
 void kslicer::WGPUCodeGen::GenerateHostDevFeatures(std::string fullSuffix, nlohmann::json jsonHost, kslicer::MainClassInfo& a_mainClass, const kslicer::TextGenSettings& a_settings)
 {
-  //kslicer::ApplyJsonToTemplate("templates_wk/wk_class.cpp", fullSuffix + ".cpp", jsonHost);
+  //kslicer::ApplyJsonToTemplate(templates_wk_path / "wk_class.cpp", fullSuffix + ".cpp", jsonHost);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

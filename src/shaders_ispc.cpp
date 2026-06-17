@@ -5,6 +5,13 @@
   #include <sys/types.h>
 #endif
 
+#include <template_files.h>
+#include <filesystem>
+
+static const std::filesystem::path templates_ispc_path(kslicer::_templates_ispc_path);
+
+
+
 void kslicer::ISPCRewriter::Init()
 { 
   m_funReplacements.clear();
@@ -490,7 +497,6 @@ void kslicer::ISPCCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, const
   std::filesystem::path incUBOPath = folderPath / "include";
   std::filesystem::create_directory(incUBOPath);
 
-  const std::string templatePath = "templates_ispc/generated.ispc";
   std::filesystem::path outFileName = mainClassFileName;
   outFileName.replace_extension("");
   outFileName.concat("_kernels.ispc");
@@ -498,8 +504,8 @@ void kslicer::ISPCCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, const
   outCppName.replace_extension("");
   outCppName.concat("_ispc.cpp");
 
-  kslicer::ApplyJsonToTemplate(templatePath, outFileName, a_kernelsJson);
-  kslicer::ApplyJsonToTemplate("templates_ispc/ispc_class.cpp", outCppName, a_kernelsJson);
+  kslicer::ApplyJsonToTemplate(templates_ispc_path, outFileName, a_kernelsJson);
+  kslicer::ApplyJsonToTemplate(templates_ispc_path / "ispc_class.cpp", outCppName, a_kernelsJson);
 
   std::ofstream buildSH(mainClassFileName.parent_path() / "z_build_ispc.sh");
   #if not __WIN32__

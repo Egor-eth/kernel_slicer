@@ -1,0 +1,13 @@
+#include <string> 
+
+namespace kslicer {
+    static const std::string _templates_path = "@KSLICER_INSTALL_FULL_DATADIR@templates";
+    static const std::string _templates_cuda_path = "@KSLICER_INSTALL_FULL_DATADIR@templates_cuda";
+    static const std::string _templates_glsl_path = "@KSLICER_INSTALL_FULL_DATADIR@templates_glsl";
+    static const std::string _templates_ispc_path = "@KSLICER_INSTALL_FULL_DATADIR@templates_ispc";
+    static const std::string _templates_slang_path = "@KSLICER_INSTALL_FULL_DATADIR@templates_slang";
+    static const std::string _templates_wk_path = "@KSLICER_INSTALL_FULL_DATADIR@templates_wk";
+
+    static const std::string _tinystl_path = "@KSLICER_INSTALL_FULL_DATADIR@TINYSTL";
+
+}
