@@ -1,0 +1,3 @@
+include(@KSLICER_INSTALL_FULL_DATADIR@cmake/KernelSlicerTargets.cmake)
+include(@KSLICER_INSTALL_FULL_DATADIR@cmake/KernelSlicerConfigVersion.cmake)
+include(@KSLICER_INSTALL_FULL_DATADIR@cmake/UseKslicer.cmake)

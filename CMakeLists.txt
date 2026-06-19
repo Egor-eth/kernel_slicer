@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.12)
-project(kernel_slicer)
+cmake_minimum_required(VERSION 3.28)
+
+
+project(KernelSlicer VERSION 0.6.1)
 
 set(LLVM_LINK_COMPONENTS support)
   
@@ -7,7 +9,6 @@ set(LLVM_LIB "LLVM")
 
 find_package(LLVM 22.1...<23 REQUIRED CONFIG)
 find_package(Clang 22.1...<23 CONFIG REQUIRED)
-set(LLVM_LINK_COMPONENTS support)
 
 option(KSLICER_LLVM_BUILD "Build kernel_slicer as a LLVM project module" OFF)
 
@@ -58,10 +59,16 @@ endif()
 
 if(KSLICER_INSTALL AND NOT CMAKE_SKIP_INSTALL_RULES)
   set(KSLICER_INSTALL_DATADIR ${CMAKE_INSTALL_DATADIR}/kslicer/)
-  set(KSLICER_INSTALL_FULL_DATADIR ${CMAKE_INSTALL_PREFIX}/${KSLICER_INSTALL_DATADIR})
+  #set(KSLICER_INSTALL_FULL_DATADIR ${CMAKE_INSTALL_PREFIX}/${KSLICER_INSTALL_DATADIR})
+  get_filename_component(KSLICER_INSTALL_FULL_DATADIR
+                         ${CMAKE_INSTALL_PREFIX}/${KSLICER_INSTALL_DATADIR} REALPATH
+                         BASE_DIR ${CMAKE_CURRENT_BINARY_DIR})
+  string(APPEND KSLICER_INSTALL_FULL_DATADIR /)
 else()
   set(KSLICER_INSTALL_DATADIR ${CMAKE_CURRENT_SOURCE_DIR}/)
-  set(KSLICER_INSTALL_FULL_DATADIR ${KSLICER_INSTALL_DATADIR})
+  #set(KSLICER_INSTALL_FULL_DATADIR ${KSLICER_INSTALL_DATADIR})
+  get_filename_component(KSLICER_INSTALL_FULL_DATADIR ${KSLICER_INSTALL_DATADIR} ABSOLUTE)
+  string(APPEND KSLICER_INSTALL_FULL_DATADIR /)
 endif()
 
 
@@ -139,9 +146,39 @@ set(KSLICER_TEMPLATE_DIRS
 
 
 if(KSLICER_INSTALL AND NOT CMAKE_SKIP_INSTALL_RULES)
-  install(TARGETS kslicer)
+  include(CMakePackageConfigHelpers)
+
+  write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/KernelSlicer/KernelSlicerConfigVersion.cmake
+    VERSION ${KernelSlicer_VERSION}
+    COMPATIBILITY AnyNewerVersion
+  )
+
+  install(TARGETS kslicer
+          EXPORT KernelSlicerTargets
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
   foreach(dir_i ${KSLICER_TEMPLATE_DIRS})
-    install(DIRECTORY ${dir_i} DESTINATION ${KSLICER_INSTALL_DATADIR})
+    install(DIRECTORY ${dir_i} 
+            DESTINATION ${KSLICER_INSTALL_DATADIR})
   endforeach(dir_i)
+
+  set(KSLICER_TARGETS_FILE )
+  configure_file(cmake/KernelSlicerConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/KernelSlicer/KernelSlicerConfig.cmake)
+
+  export(EXPORT KernelSlicerTargets
+         NAMESPACE KernelSlicer::
+         FILE ${CMAKE_CURRENT_BINARY_DIR}/KernelSlicer/KernelSlicerTargets.cmake)
+
+
+  install(EXPORT KernelSlicerTargets
+          DESTINATION ${KSLICER_INSTALL_DATADIR}cmake)
+
+  install(FILES
+            cmake/UseKslicer.cmake
+            ${CMAKE_CURRENT_BINARY_DIR}/KernelSlicer/KernelSlicerConfigVersion.cmake
+            ${CMAKE_CURRENT_BINARY_DIR}/KernelSlicer/KernelSlicerConfig.cmake
+          DESTINATION ${KSLICER_INSTALL_DATADIR}cmake
+)
 
 endif()
