@@ -56,7 +56,7 @@ public:
       if(m_vfhLevel >= 2)
         exprReplaced = "all_references." + m_className + "_buffer." + exprReplaced;
       //ReplaceTextOrWorkAround(expr->getSourceRange(), exprReplaced);
-      m_rewriter.ReplaceText(expr->getSourceRange(), exprReplaced);
+      ReplaceText(expr->getSourceRange(), exprReplaced);
       MarkRewritten(expr);
     }
     else if(dataClassNames.find(thisTypeName) != dataClassNames.end() && WasNotRewrittenYet(expr))
@@ -110,7 +110,7 @@ public:
       }
 
       //ReplaceTextOrWorkAround(expr->getSourceRange(), prefix + fieldName);
-      m_rewriter.ReplaceText(expr->getSourceRange(), prefix + fieldName);
+      ReplaceText(expr->getSourceRange(), prefix + fieldName);
       MarkRewritten(expr);
     }  
     else if(expr->isArrow() && WasNotRewrittenYet(expr))
@@ -123,7 +123,7 @@ public:
       //std::cout << "  [MemberRewriter]: process with '.' for " << thisTypeName.c_str() << "::" << fieldName.c_str() << std::endl;
 
       //ReplaceTextOrWorkAround(expr->getSourceRange(), kslicer::GetRangeSourceCode(base->getSourceRange(), m_compiler) + "." + memberName);
-      m_rewriter.ReplaceText(expr->getSourceRange(), kslicer::GetRangeSourceCode(base->getSourceRange(), m_compiler) + "." + memberName);
+      ReplaceText(expr->getSourceRange(), kslicer::GetRangeSourceCode(base->getSourceRange(), m_compiler) + "." + memberName);
       MarkRewritten(expr);
     }
 

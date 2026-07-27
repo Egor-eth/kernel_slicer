@@ -1550,9 +1550,22 @@ std::vector<std::string> kslicer::ExtractDefines(const clang::CompilerInstance& 
           const clang::MacroInfo*      MI = MD->getMacroInfo();
 
           std::stringstream strout;
-          strout << "#define " << name.c_str() << " ";
+          strout << "#define " << name.c_str();
+          if(MI->isFunctionLike()) {
+            strout << "(";
+            bool first = true;
+            for(const auto *Param : MI->params()) {
+              if(first) first = false;
+              else strout << ", ";
+              strout << Param->getName().str();
+            }
+            strout << ")";
+          }
+          strout << " ";
           for (const auto &T : MI->tokens()) {
+
             std::string temp = a_compiler.getPreprocessor().getSpelling(T);
+            if(T.hasLeadingSpace()) temp = " " + temp;
             strout << temp.c_str();
           }
 

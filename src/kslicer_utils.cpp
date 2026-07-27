@@ -15,7 +15,22 @@ std::string kslicer::GetRangeSourceCode(const clang::SourceRange a_range, const 
   const clang::SourceManager& sm = compiler.getSourceManager();
   const clang::LangOptions& lopt = compiler.getLangOpts();
 
-  clang::SourceLocation b(a_range.getBegin()), _e(a_range.getEnd());
+  clang::SourceRange sourceRange = a_range;
+
+  if(sourceRange.getBegin().isMacroID()) {
+    auto expRange = sm.getExpansionRange(sourceRange.getBegin());
+
+    sourceRange = expRange.getAsRange();
+
+    if (expRange.isCharRange()) {
+      clang::SourceLocation tokenEndLoc = clang::Lexer::GetBeginningOfToken(expRange.getEnd(),
+                                                                            compiler.getASTContext().getSourceManager(),
+                                                                            compiler.getASTContext().getLangOpts());
+      sourceRange.setEnd(tokenEndLoc);
+    }
+  }
+
+  clang::SourceLocation b(sourceRange.getBegin()), _e(sourceRange.getEnd());
   clang::SourceLocation e(clang::Lexer::getLocForEndOfToken(_e, 0, sm, lopt));
   if(e < b)
     return std::string("");

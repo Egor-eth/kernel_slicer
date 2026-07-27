@@ -124,7 +124,7 @@ bool kslicer::CudaRewriter::VisitMemberExpr_Impl(clang::MemberExpr* expr)
     if(NeedToRewriteMemberExpr(expr, rewrittenText))
     {
       //ReplaceTextOrWorkAround(expr->getSourceRange(), rewrittenText);
-      m_rewriter.ReplaceText(expr->getSourceRange(), rewrittenText);
+      ReplaceText(expr->getSourceRange(), rewrittenText);
       MarkRewritten(expr);
     }
   }

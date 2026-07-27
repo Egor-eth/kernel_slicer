@@ -544,7 +544,7 @@ void kslicer::GLSLFunctionRewriter::ApplyDefferedWorkArounds()
   {
     auto loc = clang::SourceLocation::getFromRawEncoding(pair.first);
     clang::SourceRange range(loc, loc); 
-    m_rewriter.ReplaceText(range, pair.second);
+    ReplaceText(range, pair.second);
   }
 
   m_workAround.clear();
@@ -1304,7 +1304,7 @@ bool kslicer::GLSLFunctionRewriter::VisitImplicitCastExpr_Impl(clang::ImplicitCa
     {
       const std::string textRes = RewriteConstructCall(call);
       //ReplaceTextOrWorkAround(call->getSourceRange(), textRes); //
-      m_rewriter.ReplaceText(call->getSourceRange(), textRes);    //
+      ReplaceText(call->getSourceRange(), textRes);    //
       MarkRewritten(call);
     }
 
@@ -1325,7 +1325,7 @@ bool kslicer::GLSLFunctionRewriter::VisitImplicitCastExpr_Impl(clang::ImplicitCa
     {
       const std::string exprText = RecursiveRewrite(next);
       //ReplaceTextOrWorkAround(next->getSourceRange(), castTo + "(" + exprText + ")");
-      m_rewriter.ReplaceText(next->getSourceRange(), castTo + "(" + exprText + ")");
+      ReplaceText(next->getSourceRange(), castTo + "(" + exprText + ")");
       MarkRewritten(next);
     }
   }
@@ -1492,6 +1492,8 @@ protected:
 
   bool IsGLSL() const override { return true; }
 
+  void ReplaceText(clang::SourceRange a_range, const std::string& a_text);
+
   void RewriteTextureAccess(clang::CXXOperatorCallExpr* expr, clang::Expr* a_assignOp, const std::string& rhsText);
   std::unordered_set<std::string> m_userArgs;
 };
@@ -1584,7 +1586,7 @@ void GLSLKernelRewriter::ApplyDefferedWorkArounds()
   {
     auto loc = clang::SourceLocation::getFromRawEncoding(pair.first);
     clang::SourceRange range(loc, loc); 
-    m_rewriter.ReplaceText(range, pair.second);
+    ReplaceText(range, pair.second);
   }
 
   m_workAround.clear();
@@ -1766,6 +1768,26 @@ bool GLSLKernelRewriter::VisitCXXConstructExpr_Impl(clang::CXXConstructExpr* cal
 {
   return m_glslRW.VisitCXXConstructExpr_Impl(call);
 }
+
+
+void GLSLKernelRewriter::ReplaceText(clang::SourceRange a_range, const std::string& a_text)
+{
+    if(a_range.getBegin().isMacroID()) {
+    auto expRange = m_rewriter.getSourceMgr().getExpansionRange(a_range.getBegin());
+
+    a_range = expRange.getAsRange();
+
+    if (expRange.isCharRange()) {
+      clang::SourceLocation tokenEndLoc = clang::Lexer::GetBeginningOfToken(expRange.getEnd(),
+                                                                            m_rewriter.getSourceMgr(),
+                                                                            m_compiler.getASTContext().getLangOpts());
+      a_range.setEnd(tokenEndLoc);
+    }
+  }
+
+  m_rewriter.ReplaceText(a_range, a_text);
+}
+
 
 void GLSLKernelRewriter::RewriteTextureAccess(clang::CXXOperatorCallExpr* expr, clang::Expr* a_assignOp, const std::string& rhsText)
 {
@@ -2043,7 +2065,7 @@ bool GLSLKernelRewriter::VisitDeclRefExpr_Impl(clang::DeclRefExpr* expr)
     if(!m_codeInfo->megakernelRTV || m_currKernel.isMega)
     {
       //ReplaceTextOrWorkAround(expr->getSourceRange(), std::string("kgenArgs.") + textOri);
-      m_rewriter.ReplaceText(expr->getSourceRange(), std::string("kgenArgs.") + textOri);
+      ReplaceText(expr->getSourceRange(), std::string("kgenArgs.") + textOri);
       MarkRewritten(expr);
     }
   }

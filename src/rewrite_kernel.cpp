@@ -228,7 +228,7 @@ bool kslicer::KernelRewriter::VisitMemberExpr_Impl(clang::MemberExpr* expr)
   if(NeedToRewriteMemberExpr(expr, rewrittenText))
   {
     //ReplaceTextOrWorkAround(expr->getSourceRange(), rewrittenText);
-    m_rewriter.ReplaceText(expr->getSourceRange(), rewrittenText);
+    ReplaceText(expr->getSourceRange(), rewrittenText);
     MarkRewritten(expr);
   }
 
@@ -1039,12 +1039,30 @@ std::string kslicer::KernelRewriter::RecursiveRewrite(const Stmt* expr)
   }
 }
 
+void kslicer::KernelRewriter::ReplaceText(clang::SourceRange a_range, const std::string& a_text)
+{
+  if(a_range.getBegin().isMacroID()) {
+    auto expRange = m_rewriter.getSourceMgr().getExpansionRange(a_range.getBegin());
+
+    a_range = expRange.getAsRange();
+
+    if (expRange.isCharRange()) {
+      clang::SourceLocation tokenEndLoc = clang::Lexer::GetBeginningOfToken(expRange.getEnd(),
+                                                                            m_rewriter.getSourceMgr(),
+                                                                            m_compiler.getASTContext().getLangOpts());
+      a_range.setEnd(tokenEndLoc);
+    }
+  }
+
+  m_rewriter.ReplaceText(a_range, a_text);
+}
+
 void kslicer::KernelRewriter::ReplaceTextOrWorkAround(clang::SourceRange a_range, const std::string& a_text)
 {
   if(a_range.getBegin().getRawEncoding() == a_range.getEnd().getRawEncoding())
     m_workAround[GetHashOfSourceRange(a_range)] = a_text;
   else
-    m_rewriter.ReplaceText(a_range, a_text);
+    ReplaceText(a_range, a_text);
 }
 
 void kslicer::KernelRewriter::ApplyDefferedWorkArounds()
@@ -1064,7 +1082,7 @@ void kslicer::KernelRewriter::ApplyDefferedWorkArounds()
   {
     auto loc = clang::SourceLocation::getFromRawEncoding(pair.first);
     clang::SourceRange range(loc, loc); 
-    m_rewriter.ReplaceText(range, pair.second);
+    ReplaceText(range, pair.second);
   }
 
   m_workAround.clear();
