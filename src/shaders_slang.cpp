@@ -269,7 +269,7 @@ bool kslicer::SlangRewriter::VisitMemberExpr_Impl(clang::MemberExpr* expr)
     if(NeedToRewriteMemberExpr(expr, rewrittenText))
     {
       //ReplaceTextOrWorkAround(expr->getSourceRange(), rewrittenText);
-      ReplaceText(expr->getSourceRange(), rewrittenText);
+      kslicer::ReplaceTextMacroSafe(m_rewriter, expr->getSourceRange(), rewrittenText);
       MarkRewritten(expr);
     }
   }
@@ -928,7 +928,7 @@ bool kslicer::SlangRewriter::VisitImplicitCastExpr_Impl(clang::ImplicitCastExpr*
     {
       const std::string textRes = RewriteConstructCall(call);
       //ReplaceTextOrWorkAround(call->getSourceRange(), textRes); //
-      ReplaceText(call->getSourceRange(), textRes);    //
+      kslicer::ReplaceTextMacroSafe(m_rewriter, call->getSourceRange(), textRes);    //
       MarkRewritten(call);
     }
 
@@ -958,7 +958,7 @@ bool kslicer::SlangRewriter::VisitFloatingLiteral_Impl(clang::FloatingLiteral* e
   {
     std::string originalText = kslicer::GetRangeSourceCode(expr->getSourceRange(), m_compiler);
     //ReplaceTextOrWorkAround(expr->getSourceRange(), originalText + "l");
-    ReplaceText(expr->getSourceRange(), originalText + "l");
+    kslicer::ReplaceTextMacroSafe(m_rewriter, expr->getSourceRange(), originalText + "l");
     MarkRewritten(expr);
   }
 
@@ -1018,7 +1018,7 @@ bool  kslicer::SlangRewriter::VisitDeclRefExpr_Impl(clang::DeclRefExpr* expr)
     if(NeedToRewriteDeclRefExpr(expr,rewrittenText) && WasNotRewrittenYet(expr))
     {
       //ReplaceTextOrWorkAround(expr->getSourceRange(), rewrittenText);
-      ReplaceText(expr->getSourceRange(), rewrittenText);
+      kslicer::ReplaceTextMacroSafe(m_rewriter, expr->getSourceRange(), rewrittenText);
       MarkRewritten(expr);
     }
   }

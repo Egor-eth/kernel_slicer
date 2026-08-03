@@ -758,7 +758,6 @@ namespace kslicer
     std::unordered_map<uint64_t, std::string> m_workAround;
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     
-    void ReplaceText(clang::SourceRange a_range, const std::string& a_text); //should also support macros functions
     void ReplaceTextOrWorkAround(clang::SourceRange a_range, const std::string& a_text);
 
     void MarkRewritten(const clang::Stmt* expr);
@@ -962,7 +961,6 @@ namespace kslicer
     std::shared_ptr<std::unordered_set<uint64_t> > m_pRewrittenNodes = nullptr;
     virtual std::string RecursiveRewrite (const clang::Stmt* expr);
 
-    virtual void ReplaceText(clang::SourceRange a_range, const std::string& a_text);
     virtual void ReplaceTextOrWorkAround(clang::SourceRange a_range, const std::string& a_text);
     virtual void ApplyDefferedWorkArounds();
     
@@ -1454,6 +1452,8 @@ struct IShaderCompiler
   std::vector<kslicer::KernelInfo::ArgInfo> GetUserKernelArgs(const std::vector<kslicer::KernelInfo::ArgInfo>& a_allArgs);
 
   std::vector<std::string> GetAllPredefinedThreadIdNamesRTV();
+
+  void ReplaceTextMacroSafe(clang::Rewriter &rewriter, clang::SourceRange range, const std::string& text);
 
   std::string GetRangeSourceCode(const clang::SourceRange a_range, const clang::CompilerInstance& compiler);
   std::string GetRangeSourceCode(const clang::SourceRange a_range, const clang::SourceManager& sm);

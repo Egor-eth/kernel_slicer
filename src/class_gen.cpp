@@ -587,29 +587,11 @@ bool kslicer::FunctionRewriter::WasNotRewrittenYet(const clang::Stmt* expr)
   return (m_pRewrittenNodes->find(exprHash) == m_pRewrittenNodes->end());
 }
 
-void kslicer::FunctionRewriter::ReplaceText(clang::SourceRange a_range, const std::string& a_text)
-{
-  if(a_range.getBegin().isMacroID()) {
-    auto expRange = m_rewriter.getSourceMgr().getExpansionRange(a_range.getBegin());
-
-    a_range = expRange.getAsRange();
-
-    if (expRange.isCharRange()) {
-      clang::SourceLocation tokenEndLoc = clang::Lexer::GetBeginningOfToken(expRange.getEnd(),
-                                                                            m_rewriter.getSourceMgr(),
-                                                                            m_compiler.getASTContext().getLangOpts());
-      a_range.setEnd(tokenEndLoc);
-    }
-  }
-
-  m_rewriter.ReplaceText(a_range, a_text);
-}
-
 void kslicer::FunctionRewriter::ReplaceTextOrWorkAround(clang::SourceRange a_range, const std::string& a_text)
 {
   if(a_range.getBegin().getRawEncoding() == a_range.getEnd().getRawEncoding())
     m_workAround[GetHashOfSourceRange(a_range)] = a_text;
   else
-    ReplaceText(a_range, a_text);
+    ReplaceTextMacroSafe(m_rewriter, a_range, a_text);
 }
 

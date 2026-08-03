@@ -1,6 +1,8 @@
 #include "kslicer.h"
 #include "initial_pass.h"
 #include "template_rendering.h"
+#include "clang/Basic/LangOptions.h"
+#include "clang/Basic/SourceManager.h"
 
 #include <algorithm>
 #include <cctype>
@@ -10,42 +12,34 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::string kslicer::GetRangeSourceCode(const clang::SourceRange a_range, const clang::CompilerInstance& compiler)
+static inline std::string _GetRangeSourceCode(const clang::SourceRange a_range, const clang::SourceManager& sm, const clang::LangOptions &lopt)
 {
-  const clang::SourceManager& sm = compiler.getSourceManager();
-  const clang::LangOptions& lopt = compiler.getLangOpts();
+  clang::SourceRange sourceRange;
+  sourceRange.setBegin(sm.getFileLoc(a_range.getBegin()));
+  sourceRange.setEnd(sm.getFileLoc(a_range.getEnd()));
 
-  clang::SourceRange sourceRange = a_range;
-
-  if(sourceRange.getBegin().isMacroID()) {
-    auto expRange = sm.getExpansionRange(sourceRange.getBegin());
-
-    sourceRange = expRange.getAsRange();
-
-    if (expRange.isCharRange()) {
-      clang::SourceLocation tokenEndLoc = clang::Lexer::GetBeginningOfToken(expRange.getEnd(),
-                                                                            compiler.getASTContext().getSourceManager(),
-                                                                            compiler.getASTContext().getLangOpts());
-      sourceRange.setEnd(tokenEndLoc);
-    }
-  }
+  
 
   clang::SourceLocation b(sourceRange.getBegin()), _e(sourceRange.getEnd());
   clang::SourceLocation e(clang::Lexer::getLocForEndOfToken(_e, 0, sm, lopt));
   if(e < b)
     return std::string("");
   else
-    return std::string(sm.getCharacterData(b), sm.getCharacterData(e));
+    return std::string(sm.getCharacterData(b), sm.getCharacterData(e));  
+}
+
+std::string kslicer::GetRangeSourceCode(const clang::SourceRange a_range, const clang::CompilerInstance& compiler)
+{
+  const clang::SourceManager& sm = compiler.getSourceManager();
+  const clang::LangOptions& lopt = compiler.getLangOpts();
+  return _GetRangeSourceCode(a_range, sm, lopt);
 }
 
 std::string kslicer::GetRangeSourceCode(const clang::SourceRange a_range, const clang::SourceManager& sm)
 {
   clang::LangOptions lopt;
 
-  clang::SourceLocation b(a_range.getBegin()), _e(a_range.getEnd());
-  clang::SourceLocation e(clang::Lexer::getLocForEndOfToken(_e, 0, sm, lopt));
-
-  return std::string(sm.getCharacterData(b), sm.getCharacterData(e));
+  return _GetRangeSourceCode(a_range, sm, lopt);
 }
 
 uint64_t kslicer::GetHashOfSourceRange(const clang::SourceRange& a_range)
@@ -55,6 +49,24 @@ uint64_t kslicer::GetHashOfSourceRange(const clang::SourceRange& a_range)
   return (uint64_t(hash1) << 32) | uint64_t(hash2);
 }
 
+void kslicer::ReplaceTextMacroSafe(clang::Rewriter &rewriter, clang::SourceRange range, const std::string& text)
+{
+  clang::SourceManager &sm = rewriter.getSourceMgr();
+  if(range.getBegin().isMacroID()) {
+    if(sm.isMacroArgExpansion(range.getBegin()) && sm.isMacroArgExpansion(range.getEnd())) {
+      range.setBegin(sm.getFileLoc(range.getBegin()));
+      range.setEnd(sm.getFileLoc(range.getEnd()));
+
+      rewriter.ReplaceText(range, text);
+
+//      std::cout << "REPLACE: " + GetRangeSourceCode(range, rewriter.getSourceMgr()) << std::endl;
+  //    std::cout << "WITH: " + text << std::endl;
+    } 
+  }
+  else {
+    rewriter.ReplaceText(range, text);
+  }
+}
 
 void kslicer::PrintError(const std::string& a_msg, const clang::SourceRange& a_range, const clang::SourceManager& a_sm)
 {
