@@ -652,20 +652,21 @@ bool kslicer::InitialPassASTConsumer::HandleTopLevelDecl(DeclGroupRef d)
 #include <filesystem>
 namespace fs = std::filesystem;
 
-void kslicer::CheckInterlanIncInExcludedFolders(const std::vector<fs::path>& a_folders)
+void kslicer::CheckInterlanIncInExcludedFolders(const std::unordered_set<fs::path>& a_folders)
 {
-  std::vector<std::string> stopList;
-  stopList.push_back("LiteMath.h");
-  stopList.push_back("half.hpp");
-  stopList.push_back("LiteMathGPU.h");
-  stopList.push_back("aligned_alloc.h");
-  stopList.push_back("Image2d.h");
+  std::unordered_set<std::string> stopList{
+        "LiteMath.h",
+        "half.hpp",
+        "LiteMathGPU.h",
+        "aligned_alloc.h",
+        "Image2d.h"
+      };
 
   for(const auto path : a_folders) {
     for (const auto& entry : fs::directory_iterator(path)) {
       if(entry.is_directory())
         continue;
-      const std::string fileName = entry.path().u8string();
+      const std::string fileName = entry.path().filename().string();
       bool found = false;
       for(const auto fname : stopList) {
         if(fileName.find(fname) != std::string::npos) {

@@ -352,17 +352,19 @@ int main(int argc, const char **argv)
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   
-  std::vector<std::filesystem::path> ignoreFolders;
-  std::vector<std::filesystem::path> processFolders;
+  std::unordered_set<std::filesystem::path> ignoreFolders;
+  std::unordered_set<std::filesystem::path> processFolders;
   for(auto p : params)
   {
     std::string folderT = p.second;
     std::transform(folderT.begin(), folderT.end(), folderT.begin(), [](unsigned char c){ return std::tolower(c); });
 
-    if(p.first.size() > 1 && p.first[0] == '-' && p.first[1] == 'I' && folderT == "ignore")
-      ignoreFolders.push_back(p.first.substr(2));
-    else if(p.first.size() > 1 && p.first[0] == '-' && p.first[1] == 'I' && folderT == "process")
-      processFolders.push_back(p.first.substr(2));
+    if(p.first.size() > 1 && p.first[0] == '-' && p.first[1] == 'I' && p.first[2] == 'I') {
+      ignoreFolders.insert(std::filesystem::path(p.first.substr(3)));
+    }
+    else if(p.first.size() > 1 && p.first[0] == '-' && p.first[1] == 'I' && p.first[2] == 'P') {
+      processFolders.insert(std::filesystem::path(p.first.substr(3)));
+    }
   }
 
   for(auto folder : inputOptions["includeProcess"])
@@ -375,7 +377,7 @@ int main(int argc, const char **argv)
       path = std::filesystem::absolute(baseProjectPath / path);
 
     if(std::filesystem::exists(path) && std::filesystem::is_directory(path))
-      processFolders.push_back(path);
+      processFolders.insert(path);
     else
       std::cout << "[main]: bad folder from 'includeProcess' list: " << path.c_str() << std::endl;
   }
@@ -390,14 +392,14 @@ int main(int argc, const char **argv)
       path = std::filesystem::absolute(baseProjectPath / path);
 
     if(std::filesystem::exists(path) && std::filesystem::is_directory(path))
-      ignoreFolders.push_back(path);
+      ignoreFolders.insert(path);
     else
       std::cout << "[main]: bad folder from 'includeIgnore' list: " << path.c_str() << std::endl;
   }
 
   // make specific checks to be sure user don't include these files to hit project as normal files
   //
-  processFolders.push_back(mainFolderPath);                    // always process all includes in main folder (?)
+  processFolders.insert(mainFolderPath);                    // always process all includes in main folder (?)
   kslicer::CheckInterlanIncInExcludedFolders(processFolders);  //
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -433,7 +435,7 @@ int main(int argc, const char **argv)
   {
     inputCodeInfo.pShaderCC = std::make_shared<kslicer::GLSLCompiler>(inputCodeInfo.mainClassSuffix);
     inputCodeInfo.pHostCC   = std::make_shared<kslicer::VulkanCodeGen>();
-    inputCodeInfo.processFolders.push_back("include/");
+    inputCodeInfo.processFolders.insert("include/");
   }
   else if(shaderCCName == "slang" || shaderCCName == "SLANG" || shaderCCName == "Slang" || shaderCCName == "cuda_slang")
   {
@@ -442,13 +444,13 @@ int main(int argc, const char **argv)
       inputCodeInfo.pHostCC = std::make_shared<kslicer::CudaCodeGen>("cuda"); 
     else
       inputCodeInfo.pHostCC = std::make_shared<kslicer::VulkanCodeGen>(); 
-    inputCodeInfo.processFolders.push_back("include/");
+    inputCodeInfo.processFolders.insert("include/");
   }
   else if(shaderCCName == "wgpu" || shaderCCName == "WebGPU" || shaderCCName == "WEBGPU")
   {
     inputCodeInfo.pShaderCC = std::make_shared<kslicer::SlangCompiler>(inputCodeInfo.mainClassSuffix, true);
     inputCodeInfo.pHostCC   = std::make_shared<kslicer::WGPUCodeGen>(); 
-    inputCodeInfo.processFolders.push_back("include/");
+    inputCodeInfo.processFolders.insert("include/");
   }
   else if(shaderCCName == "cuda" || shaderCCName == "CUDA" || shaderCCName == "hip" || shaderCCName == "HIP" || shaderCCName == "musa" || shaderCCName == "MUSA")
   {
@@ -461,7 +463,7 @@ int main(int argc, const char **argv)
     }
     inputCodeInfo.pShaderCC = std::make_shared<kslicer::CudaCompiler>(inputCodeInfo.mainClassSuffix); 
     inputCodeInfo.pHostCC   = std::make_shared<kslicer::CudaCodeGen>(actualCUDAType);
-    inputCodeInfo.ignoreFolders.push_back("include/");
+    inputCodeInfo.ignoreFolders.insert("include/");
 
     inputCodeInfo.placeVectorsInUBO = true;
   }
@@ -469,13 +471,13 @@ int main(int argc, const char **argv)
   {
     inputCodeInfo.pShaderCC = std::make_shared<kslicer::ISPCCompiler>(useCppInKernels, inputCodeInfo.mainClassSuffix);
     inputCodeInfo.pHostCC   = std::make_shared<kslicer::ISPCCodeGen>();
-    inputCodeInfo.ignoreFolders.push_back("include/");
+    inputCodeInfo.ignoreFolders.insert("include/");
   }
   else
   {
     inputCodeInfo.pShaderCC = std::make_shared<kslicer::ClspvCompiler>(useCppInKernels, inputCodeInfo.mainClassSuffix);
     inputCodeInfo.pHostCC   = std::make_shared<kslicer::VulkanCodeGen>();
-    inputCodeInfo.ignoreFolders.push_back("include/");
+    inputCodeInfo.ignoreFolders.insert("include/");
   }
 
   // override this parameter with value that we have read from commadn line
@@ -662,9 +664,9 @@ int main(int argc, const char **argv)
       stdlibFolder = tinystl2Path.string();
   }
   
-  auto alreadyFound = std::find(inputCodeInfo.ignoreFolders.begin(), inputCodeInfo.ignoreFolders.end(), stdlibFolder);
-  if(stdlibFolder != "" && alreadyFound == inputCodeInfo.ignoreFolders.end())
-    inputCodeInfo.ignoreFolders.push_back(stdlibFolder);
+  if(stdlibFolder != "" && (inputCodeInfo.ignoreFolders.find(stdlibFolder) == inputCodeInfo.ignoreFolders.end())) {
+    inputCodeInfo.ignoreFolders.insert(stdlibFolder);
+  }
   /////////////////////////////////////////////////////////////////////////////////////////////////// -stdlibFolder
 
   // (0) add path dummy include files for STL and e.t.c. (we don't want to parse actually std library)

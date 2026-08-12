@@ -1281,8 +1281,8 @@ struct IShaderCompiler
     OptionalDeviceFeatures  globalDeviceFeatures;
     
 
-    std::vector<std::filesystem::path> ignoreFolders;  ///<! in these folders files are ignored
-    std::vector<std::filesystem::path> processFolders; ///<! in these folders files are processed to take functions and structures from them to shaders
+    std::unordered_set<std::filesystem::path> ignoreFolders;  ///<! in these folders files are ignored
+    std::unordered_set<std::filesystem::path> processFolders; ///<! in these folders files are processed to take functions and structures from them to shaders
     std::vector<std::string> ignoreFiles;    ///<! exception to 'processFolders'
     std::vector<std::string> processFiles;   ///<! exception to 'ignoreFolders'
     std::vector<std::string> cppIncudes;     ///<! additional includes which we need to insert in generated cpp file
@@ -1493,7 +1493,7 @@ struct IShaderCompiler
   CPP11_ATTR GetMethodAttr(const clang::CXXMethodDecl* f, clang::CompilerInstance& a_compiler);
 
   KernelInfo::ArgInfo ProcessParameter(const clang::ParmVarDecl *p);
-  void CheckInterlanIncInExcludedFolders(const std::vector<std::filesystem::path>& a_folders);
+  void CheckInterlanIncInExcludedFolders(const std::unordered_set<std::filesystem::path>& a_folders);
 
   ShaderFeatures GetUsedShaderFeaturesFromTypeName(const std::string& a_str);
 

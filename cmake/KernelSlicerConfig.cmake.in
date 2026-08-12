@@ -1,3 +1,8 @@
 include(@KSLICER_INSTALL_FULL_DATADIR@cmake/KernelSlicerTargets.cmake)
 include(@KSLICER_INSTALL_FULL_DATADIR@cmake/KernelSlicerConfigVersion.cmake)
+
+
+set(KSLICER_EXECUTABLE "@KSLICER_INSTALL_FULL_BINARY_PATH@" CACHE PATH "Path to Kernel Slicer")
+set(KSLICER_TINYSTL_PATH @KSLICER_INSTALL_FULL_DATADIR@TINYSTL CACHE PATH "Path to TINYSTL")
+
 include(@KSLICER_INSTALL_FULL_DATADIR@cmake/UseKslicer.cmake)
