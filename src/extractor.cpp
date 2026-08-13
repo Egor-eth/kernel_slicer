@@ -1044,7 +1044,7 @@ bool kslicer::MainClassInfo::IsInExcludedFolder(const std::string& fileName)
   bool exclude = false;
   for(auto folder : this->ignoreFolders)  //
   {
-    if(fileName.find(folder.u8string()) != std::string::npos)
+    if(fileName.find(folder.string()) != std::string::npos)
     {
       exclude = true;
       break;
@@ -1074,7 +1074,7 @@ bool kslicer::MainClassInfo::NeedToProcessDeclInFile(const std::string a_fileNam
   bool needInsertToKernels = false;             // do we have to process this declaration to further insert it to GLSL/CL ?
   for(auto folder : this->processFolders)       //
   {
-    if(a_fileName.find(folder.u8string()) != std::string::npos)
+    if(a_fileName.find(folder.string()) != std::string::npos)
     {
       needInsertToKernels = true;
       break;
@@ -1085,7 +1085,7 @@ bool kslicer::MainClassInfo::NeedToProcessDeclInFile(const std::string a_fileNam
   {
     for(auto folder : this->ignoreFolders)        // consider ["maypath/AA"] in 'processFolders' and ["maypath/AA/BB"] in 'ignoreFolders'
     {                                             // we should definitely ignore such definitions
-      if(a_fileName.find(folder.u8string()) != std::string::npos)
+      if(a_fileName.find(folder.string()) != std::string::npos)
       {
         needInsertToKernels = false;
         break;

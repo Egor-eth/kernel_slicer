@@ -447,8 +447,8 @@ nlohmann::json kslicer::PrepareJsonForAllCPP(const MainClassInfo& a_classInfo, c
     prefixDataName = a_classInfo.composPrefix.begin()->second;
 
   json data;
-  data["MainInclude"]        = mainInclude.u8string();
-  data["MainIncludeApi"]     = mainIncludeGeneratedAPI.u8string();
+  data["MainInclude"]        = mainInclude.string();
+  data["MainIncludeApi"]     = mainIncludeGeneratedAPI.string();
   data["AdditionalIncludes"] = std::vector<std::string>();
   for(auto file : a_classInfo.cppIncudes)
     data["AdditionalIncludes"].push_back(file);
@@ -703,7 +703,7 @@ nlohmann::json kslicer::PrepareJsonForAllCPP(const MainClassInfo& a_classInfo, c
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  data["IncludeClassDecl"]    = mainIncludeGenerated.u8string();
+  data["IncludeClassDecl"]    = mainIncludeGenerated.string();
   data["TotalDescriptorSets"] = a_classInfo.allDescriptorSetsInfo.size(); // #TODO: REFACTOR THIS !!!
   data["TotalDSNumber"]       = a_classInfo.allDescriptorSetsInfo.size(); // #TODO: REFACTOR THIS !!!
 

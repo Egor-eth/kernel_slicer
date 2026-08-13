@@ -517,7 +517,7 @@ void kslicer::ISPCCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, const
   std::filesystem::path kernelHeader = mainClassFileName;
   kernelHeader.replace_extension("");
   kernelHeader.concat("_kernels.h");
-  std::string build = this->BuildCommand(outFileName.u8string()) + " -o " + kernelTarget.u8string() + " -h " + kernelHeader.u8string();
+  std::string build = this->BuildCommand(outFileName.string()) + " -o " + kernelTarget.string() + " -h " + kernelHeader.string();
   buildSH << build.c_str() << " ";
   for(auto folder : ignoreFolders)
     buildSH << "-I" << folder.c_str() << " ";

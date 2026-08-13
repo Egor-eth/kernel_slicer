@@ -549,7 +549,7 @@ void {{MainClassName}}{{MainClassSuffix}}::InitKernel_{{Kernel.Name}}(const char
   {% endif %}
   {{Kernel.Name}}DSLayout = Create{{Kernel.Name}}DSLayout();
   {% if Kernel.IsMega %}
-  if(m_megaKernelFlags.enable{{Kernel.Name}})
+  if(m_megaKernelFlags["{{Kernel.Name}}"])
   {% else %}
   if(true)
   {% endif %}
@@ -2215,4 +2215,10 @@ VkPhysicalDeviceFeatures2 {{MainClassName}}{{MainClassSuffix}}::ListRequiredDevi
   return features2;
 }
 
-{{MainClassName}}{{MainClassSuffix}}::MegaKernelIsEnabled {{MainClassName}}{{MainClassSuffix}}::m_megaKernelFlags;
+std::unordered_map<std::string, bool> {{MainClassName}}{{MainClassSuffix}}::m_megaKernelFlags{
+    {% for MainFunc in MainFunctions %}
+    {% if MainFunc.IsRTV and MainFunc.IsMega %}
+    { "{{MainFunc.Name}}Mega", true },
+    {% endif %}
+    {% endfor %}
+  };

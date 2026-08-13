@@ -110,12 +110,12 @@ if(NOT KSLICER_LLVM_BUILD)
   add_executable(kslicer ${KSLICER_SOURCE_FILES})
 
   target_include_directories(kslicer PUBLIC ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
-  target_include_directories(kslicer PRIVATE include)
+  target_include_directories(kslicer PRIVATE include api)
   target_include_directories(kslicer PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/gen)
   target_link_directories(kslicer PUBLIC ${LLVM_LIBRARY_DIRS})
   add_definitions(${LLVM_DEFINITIONS})
   add_definitions(${CLANG_DEFINITIONS})
-  target_compile_features(kslicer PUBLIC cxx_std_17)
+  target_compile_features(kslicer PUBLIC cxx_std_20)
 
   target_link_libraries(kslicer
     PRIVATE
@@ -130,7 +130,7 @@ else() # NOT DEFINED KSLICER_LLVM_BUILD
   set(LLVM_LINK_COMPONENTS support)
   add_clang_executable(kslicer ${KSLICER_SOURCE_FILES})
 
-  target_compile_features(kslicer PUBLIC cxx_std_17)
+  target_compile_features(kslicer PUBLIC cxx_std_20)
 
   target_compile_options(kslicer PRIVATE -fexceptions)
 
@@ -140,6 +140,12 @@ else() # NOT DEFINED KSLICER_LLVM_BUILD
   target_include_directories(kslicer PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/gen)
 endif() # DEFINED KSLICER_LLVM_BUILD
 
+
+add_library(kslicer_api INTERFACE)
+set_target_properties(kslicer_api PROPERTIES EXPORT_NAME api)
+target_include_directories(kslicer_api INTERFACE
+              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/api>
+              $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 set(KSLICER_TEMPLATE_DIRS
   templates
@@ -163,6 +169,16 @@ if(KSLICER_INSTALL AND NOT CMAKE_SKIP_INSTALL_RULES)
   install(TARGETS kslicer
           EXPORT KernelSlicerTargets
           RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+
+  install(DIRECTORY api/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+  install(TARGETS kslicer_api
+          EXPORT KernelSlicerTargets
+          INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  
+
   foreach(dir_i ${KSLICER_TEMPLATE_DIRS})
     install(DIRECTORY ${dir_i} 
             DESTINATION ${KSLICER_INSTALL_DATADIR})
@@ -177,6 +193,7 @@ if(KSLICER_INSTALL AND NOT CMAKE_SKIP_INSTALL_RULES)
 
 
   install(EXPORT KernelSlicerTargets
+          NAMESPACE KernelSlicer::
           DESTINATION ${KSLICER_INSTALL_DATADIR}cmake)
 
   install(FILES

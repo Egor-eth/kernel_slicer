@@ -575,7 +575,7 @@ protected:
   {% endif %}
 public:
 
-  struct MegaKernelIsEnabled
+  /*struct MegaKernelIsEnabled
   {
     {% for MainFunc in MainFunctions %}
     {% if MainFunc.IsRTV and MainFunc.IsMega %}
@@ -583,10 +583,11 @@ public:
     {% endif %}
     {% endfor %}
     bool dummy = 0;
-  };
+  };*/
 
-  static MegaKernelIsEnabled  m_megaKernelFlags;
-  static MegaKernelIsEnabled& EnabledPipelines() { return m_megaKernelFlags; }
+  static std::unordered_map<std::string, bool> m_megaKernelFlags;
+  static std::unordered_map<std::string, bool>& EnabledPipelines() { return m_megaKernelFlags; }
+
   {% if EnableTimeStamps %}
   VkQueryPool m_queryPoolTimestamps = VK_NULL_HANDLE;
   uint32_t    m_timestampPoolSize = 0;

@@ -5,6 +5,9 @@
 #include <chrono>
 #include <array>
 
+//#define KSLICER_VULKAN
+#include <kslicer/api.h>
+
 #include "vk_copy.h"
 #include "vk_context.h"
 #include "vk_images.h"
@@ -802,3 +805,31 @@ void {{MainClassName}}{{MainClassSuffix}}::PrefixSummAligned(uint32_t* a_array, 
   }
 }
 {% endif %}
+
+
+extern vk_utils::VulkanDeviceFeatures {{MainClassName}}{{MainClassSuffix}}_ListRequiredDeviceFeatures();
+
+  {% for ctorDecl in Constructors %}
+namespace kslicer {
+  template<>
+  std::unique_ptr<{{MainClassName}}> make_gpu_from_context(const kslicer::VulkanCreateContext &ctx, unsigned nThreads, {{ctorDecl.Params}})
+  {
+
+    auto deviceFeatures = {{MainClassName}}{{MainClassSuffix}}_ListRequiredDeviceFeatures();
+    deviceFeatures.memForBuffers += ctx.auxBufferMemory;
+
+
+    auto vkCtx = vk_utils::globalContextInit(deviceFeatures, ctx.enableValidationLayers, ctx.prefferedDeviceId);
+
+    auto pObj = std::make_unique<{{MainClassName}}{{MainClassSuffix}}>({{ctorDecl.PrevCall}});
+    pObj->SetVulkanContext(vkCtx);
+    pObj->InitVulkanObjects(vkCtx.device, vkCtx.physicalDevice, nThreads);
+
+
+    return pObj;
+  }
+}
+
+template std::unique_ptr<{{MainClassName}}> kslicer::make_gpu_from_context(const kslicer::VulkanCreateContext &ctx, unsigned nThreads, {{ctorDecl.Params}});
+
+{% endfor %}

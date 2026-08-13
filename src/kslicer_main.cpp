@@ -70,7 +70,7 @@ std::vector<std::string> ListProcessedFiles(nlohmann::json a_filesArray, std::fi
   
   for(const auto& param : a_filesArray) 
   {
-    std::filesystem::path path = std::filesystem::u8path((std::string)param);
+    std::filesystem::path path = std::filesystem::path((std::string)param);
     if(path.is_absolute())
       allFiles.push_back(path.string());
     else
@@ -405,7 +405,7 @@ int main(int argc, const char **argv)
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  std::vector<const char*> argsForClang = ExcludeSlicerParams(argc, argv, params, fileName.u8string().c_str(), defines);
+  std::vector<const char*> argsForClang = ExcludeSlicerParams(argc, argv, params, fileName.string().c_str(), defines);
   llvm::ArrayRef<const char*> args(argsForClang.data(), argsForClang.data() + argsForClang.size());
 
   // Make sure it exists
@@ -674,9 +674,9 @@ int main(int argc, const char **argv)
   auto& headerSearchOptions = compiler.getHeaderSearchOpts();
   headerSearchOptions.AddPath(stdlibFolder.c_str(), clang::frontend::Angled, false, false);
   for(const auto& includePath : processFolders)
-    headerSearchOptions.AddPath(includePath.u8string().c_str(), clang::frontend::Angled, false, false);
+    headerSearchOptions.AddPath(includePath.string().c_str(), clang::frontend::Angled, false, false);
   for(const auto& includePath : ignoreFolders)
-    headerSearchOptions.AddPath(includePath.u8string().c_str(), clang::frontend::Angled, false, false);
+    headerSearchOptions.AddPath(includePath.string().c_str(), clang::frontend::Angled, false, false);
   
   //headerSearchOptions.Verbose = 1;
   compiler.getPreprocessorOpts().UsePredefines = false;
@@ -687,7 +687,7 @@ int main(int argc, const char **argv)
   compiler.getPreprocessor().addPPCallbacks(std::make_unique<HeaderLister>(headerLister));
   compiler.createASTContext();
 
-  auto fileRef = compiler.getFileManager().getFileRef(fileName.u8string());
+  auto fileRef = compiler.getFileManager().getFileRef(fileName.string());
   if(!fileRef) {
     llvm::logAllUnhandledErrors(fileRef.takeError(), llvm::errs(), "[main] ");
     return 1;
@@ -698,7 +698,7 @@ int main(int argc, const char **argv)
 
   // init clang tooling
   //
-  const std::string filenameString = fileName.u8string();
+  const std::string filenameString = fileName.string();
   std::vector<const char*> argv2 = {argv[0], filenameString.c_str()};
   std::vector<std::string> extraArgs; 
   extraArgs.reserve(256);
