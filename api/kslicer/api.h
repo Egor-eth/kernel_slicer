@@ -2,9 +2,6 @@
 #define KSLICER_API_H_
 #include <memory>
 
-                            #define KSLICER_VULKAN
-
-
 
 #if defined(KSLICER_VULKAN)
 #include "vulkan_api.h"

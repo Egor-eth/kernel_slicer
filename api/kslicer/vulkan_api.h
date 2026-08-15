@@ -13,8 +13,8 @@ namespace kslicer {
         bool enableValidationLayers = false;
     };
 
-    //template<typename T>
-    //void megakernel_set_pipeline_enable_flag(const std::string &name, bool flag);
+    template<typename T>
+    void megakernel_set_pipeline_enable_flag(const std::string &name, bool flag);
     
     template<typename T, typename... Args> requires IsConstuctorCompatible<T, Args...>
     std::unique_ptr<T> make_gpu_from_context(const VulkanCreateContext &ctx, unsigned nThreads, Args ...args);

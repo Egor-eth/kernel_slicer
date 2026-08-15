@@ -359,11 +359,13 @@ int main(int argc, const char **argv)
     std::string folderT = p.second;
     std::transform(folderT.begin(), folderT.end(), folderT.begin(), [](unsigned char c){ return std::tolower(c); });
 
-    if(p.first.size() > 1 && p.first[0] == '-' && p.first[1] == 'I' && p.first[2] == 'I') {
-      ignoreFolders.insert(std::filesystem::path(p.first.substr(3)));
+    if(p.first.size() > 1 && p.first[0] == '-' && p.first[1] == 'I' && p.second == "ignore") {
+      ignoreFolders.insert(std::filesystem::path(p.first.substr(2)));
+      std::cout << "Ignore " + p.first.substr(2) << std::endl;
     }
-    else if(p.first.size() > 1 && p.first[0] == '-' && p.first[1] == 'I' && p.first[2] == 'P') {
-      processFolders.insert(std::filesystem::path(p.first.substr(3)));
+    else if(p.first.size() > 1 && p.first[0] == '-' && p.first[1] == 'I' && p.second == "process") {
+      processFolders.insert(std::filesystem::path(p.first.substr(2)));
+      std::cout << "Process " + p.first.substr(2) << std::endl;
     }
   }
 
@@ -1687,7 +1689,7 @@ int main(int argc, const char **argv)
   if(mainFileNameStr.find("_temp.cpp") != std::string::npos)
   {
     std::cout << "(10) Removing tmp file " << mainFileNameStr.c_str() << std::endl;
-    std::filesystem::remove(fileName);
+  //  std::filesystem::remove(fileName);
   }
 
   std::cout << "(10) Finished! " << std::endl;  

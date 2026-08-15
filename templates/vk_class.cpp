@@ -4,6 +4,7 @@
 #include <cassert>
 #include <chrono>
 #include <array>
+#include <iostream>
 
 //#define KSLICER_VULKAN
 #include <kslicer/api.h>
@@ -806,6 +807,22 @@ void {{MainClassName}}{{MainClassSuffix}}::PrefixSummAligned(uint32_t* a_array, 
 }
 {% endif %}
 
+// API Implementations
+namespace kslicer {
+  template<>
+  void megakernel_set_pipeline_enable_flag<{{MainClassName}}>(const std::string &name, bool flag)
+  {
+    auto &map = {{MainClassName}}{{MainClassSuffix}}::EnabledPipelines();
+
+    auto it = map.find(name);
+    if(it == map.end()) {
+      std::cerr << "[Warning] Unknown pipeline enable flag " + name << std::endl;
+    } 
+    else {
+      it->second = flag;
+    }
+  }
+}
 
 extern vk_utils::VulkanDeviceFeatures {{MainClassName}}{{MainClassSuffix}}_ListRequiredDeviceFeatures();
 
