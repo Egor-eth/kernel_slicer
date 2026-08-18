@@ -1258,6 +1258,8 @@ struct IShaderCompiler
     std::unordered_map<std::string, int>               mainClassNames;        ///<! All main classes (derived + base) 
     std::unordered_set<std::string>                    dataClassNames; 
 
+    std::filesystem::path                              sourceRootPath;
+
     std::vector< std::pair<std::string, std::string> > intersectionShaders;
     std::vector< std::pair<std::string, std::string> > intersectionTriangle;
     std::unordered_set<std::string>                    intersectionWhiteList;

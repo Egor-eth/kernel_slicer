@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <filesystem>
 #include <string>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -425,8 +426,11 @@ std::unordered_map<std::string, std::string> ReadCommandLineParams(int argc, con
 
     // merge files to a single temporary file
     auto folderPath = fileName.parent_path();
-    auto fileName2  = fileName.filename();
-    fileName2.replace_extension("");
+    if(auto it = cmdLineParams.find("-generates_output_dir"); it != cmdLineParams.end()) {
+      folderPath = std::filesystem::path(it->second);
+    }
+
+    auto fileName2  = fileName.stem();
     
     if (cmdLineParams.find("-temp_suffix") != cmdLineParams.end())
     {
@@ -440,6 +444,7 @@ std::unordered_map<std::string, std::string> ReadCommandLineParams(int argc, con
     
     std::cout << "[kslicer]: merging input files to temporary file " << fileName2 << std::endl;
     
+    std::filesystem::create_directory(folderPath);
     std::ofstream fout(fileNameT);
     for(auto def : defines)
       fout << "#define " << def.first << " " << def.second << std::endl;

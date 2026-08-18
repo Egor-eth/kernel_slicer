@@ -171,6 +171,7 @@ void kslicer::GLSLCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, const
     if(useRayTracingPipeline)
       buildSH << "-S rgen ";
     buildSH << outFileName.c_str() << " -o " << outFileName.c_str() << ".spv" << " -DGLSL -I.. ";
+    buildSH << "-I" << a_codeInfo->sourceRootPath.string() << " ";
     for(auto folder : ignoreFolders)
       buildSH << "-I" << folder.c_str() << " ";
     buildSH << std::endl;
@@ -184,6 +185,7 @@ void kslicer::GLSLCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, const
       if(vulkan11)
         buildSH << "--target-env vulkan1.1 ";
       buildSH << outFileName.c_str() << " -o " << outFileName.c_str() << ".spv" << " -DGLSL -I.. ";
+      buildSH << "-I" << a_codeInfo->sourceRootPath.string() << " ";
       for(auto folder : ignoreFolders)
        buildSH << "-I" << folder.c_str() << " ";
       buildSH << std::endl;
@@ -198,6 +200,7 @@ void kslicer::GLSLCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, const
       if(vulkan11)
         buildSH << "--target-env vulkan1.1 ";
       buildSH << outFileName.c_str() << " -o " << outFileName.c_str() << ".spv" << " -DGLSL -I.. ";
+      buildSH << "-I" << a_codeInfo->sourceRootPath.string() << " ";
       for(auto folder : ignoreFolders)
        buildSH << "-I" << folder.c_str() << " ";
       buildSH << std::endl;

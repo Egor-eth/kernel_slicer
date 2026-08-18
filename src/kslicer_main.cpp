@@ -1,21 +1,18 @@
+#include <clang/Lex/HeaderSearchOptions.h>
 #include <llvm/Support/Error.h>
 #include <stdio.h>
 #include <vector>
-#include <system_error>
 #include <iostream>
 #include <fstream>
 #include <filesystem>
 
 #include <unordered_map>
-#include <iomanip>
 #include <cctype>
-#include <queue>
 
 #include "llvm/TargetParser/Host.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/ADT/IntrusiveRefCntPtr.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/Support/FileSystem.h"
 
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
@@ -29,10 +26,8 @@
 #include "clang/Lex/PreprocessorOptions.h"
 #include "clang/Basic/Diagnostic.h"
 
-#include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTTypeTraits.h"
-#include "clang/AST/DeclTemplate.h"
 
 #include "clang/Parse/ParseAST.h"
 #include "clang/Rewrite/Frontend/Rewriters.h"
@@ -173,6 +168,8 @@ int main(int argc, const char **argv)
   std::vector<std::string> cppIncludesAdditional;
   std::filesystem::path    fileName;
   auto paramsFromCmdLine = ReadCommandLineParams(argc, argv, defines, fileName,  allFiles, ignoreFiles, processFiles, cppIncludesAdditional);
+
+  const std::filesystem::path firstFile = std::filesystem::path(allFiles[0]);
 
   std::unordered_map<std::string, std::string> params;
   {
@@ -408,7 +405,11 @@ int main(int argc, const char **argv)
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   std::vector<const char*> argsForClang = ExcludeSlicerParams(argc, argv, params, fileName.string().c_str(), defines);
-  llvm::ArrayRef<const char*> args(argsForClang.data(), argsForClang.data() + argsForClang.size());
+  //const std::string sourcesRootPathParam = "-iquote" + firstFile.parent_path().string();
+ // argsForClang.push_back(sourcesRootPathParam.c_str());
+  //for(const std::string &arg : argsForClang) std::cout << arg << std::endl;
+
+  //llvm::ArrayRef<const char*> args(argsForClang.data(), argsForClang.data() + argsForClang.size());
 
   // Make sure it exists
   std::ifstream fin(fileName.c_str());
@@ -425,6 +426,7 @@ int main(int argc, const char **argv)
 
   kslicer::MainClassInfo& inputCodeInfo = *pImplPattern;
 
+  inputCodeInfo.sourceRootPath = firstFile.parent_path();
   inputCodeInfo.ignoreFolders  = ignoreFolders;  // set shader folders
   inputCodeInfo.processFolders = processFolders; // set common C/C++ folders
   inputCodeInfo.ignoreFiles    = ignoreFiles;    // set exceptions for common C/C++ folders (i.e. processFolders)
@@ -629,7 +631,7 @@ int main(int argc, const char **argv)
 
   // Create an invocation that passes any flags to preprocessor
   std::shared_ptr<clang::CompilerInvocation> Invocation = std::make_shared<clang::CompilerInvocation>(); //
-  clang::CompilerInvocation::CreateFromArgs(*Invocation, args, *diagEngine);
+  clang::CompilerInvocation::CreateFromArgs(*Invocation, argsForClang, *diagEngine);
   clang::CompilerInstance compiler(Invocation);
   compiler.createDiagnostics();
 
@@ -674,13 +676,14 @@ int main(int argc, const char **argv)
   // (0) add path dummy include files for STL and e.t.c. (we don't want to parse actually std library)
   //
   auto& headerSearchOptions = compiler.getHeaderSearchOpts();
+  headerSearchOptions.AddPath(firstFile.parent_path().string(), clang::frontend::Quoted, false, false);
   headerSearchOptions.AddPath(stdlibFolder.c_str(), clang::frontend::Angled, false, false);
   for(const auto& includePath : processFolders)
     headerSearchOptions.AddPath(includePath.string().c_str(), clang::frontend::Angled, false, false);
   for(const auto& includePath : ignoreFolders)
     headerSearchOptions.AddPath(includePath.string().c_str(), clang::frontend::Angled, false, false);
   
-  //headerSearchOptions.Verbose = 1;
+  headerSearchOptions.Verbose = 1;
   compiler.getPreprocessorOpts().UsePredefines = false;
   compiler.createPreprocessor(clang::TU_Complete);
   compiler.getPreprocessorOpts().UsePredefines = false;
@@ -706,24 +709,27 @@ int main(int argc, const char **argv)
   extraArgs.reserve(256);
   for(auto p : params) {
     if(p.first.size() > 1 && p.first[0] == '-' && p.first[1] == 'I') {
-      extraArgs.push_back(std::string("-extra-arg=") + p.first);
+      extraArgs.push_back("-extra-arg=" + p.first);
       argv2.push_back(extraArgs.back().c_str());
     }
   }
   for(const auto& includePath : processFolders) {
-    extraArgs.push_back(std::string("-extra-arg=") + std::string("-I") + includePath.string());
+    extraArgs.push_back("-extra-arg=-I" + includePath.string());
     argv2.push_back(extraArgs.back().c_str());
   }
   for(const auto& includePath : ignoreFolders) {
-    extraArgs.push_back(std::string("-extra-arg=") + std::string("-I") + includePath.string());
+    extraArgs.push_back("-extra-arg=-I" + includePath.string());
     argv2.push_back(extraArgs.back().c_str());
   }
   //if(optionsPath != "") 
   { 
-    extraArgs.push_back(std::string("-extra-arg=") + std::string("-I") + stdlibFolder);
+    extraArgs.push_back("-extra-arg=-I" + stdlibFolder);
     argv2.push_back(extraArgs.back().c_str());
   }
-  
+
+  extraArgs.push_back("-extra-arg=-I" + firstFile.parent_path().string());
+  argv2.push_back(extraArgs.back().c_str());
+
   argv2.push_back("--");
   int argSize = argv2.size();
 
@@ -1559,7 +1565,13 @@ int main(int argc, const char **argv)
   if (params.find("-new_rawname") != params.end())
     newRawname = atoi(params["-new_rawname"].c_str()) != 0;
 
-  const std::string rawname = newRawname ? (std::filesystem::path(allFiles[0]).parent_path() / mainClassName).string() : kslicer::CutOffFileExt(allFiles[0]);
+  std::filesystem::path generatesOutputDir = firstFile.parent_path();
+  if (auto it = params.find("-generates_output_dir"); it != params.end()) {
+    generatesOutputDir = std::filesystem::path(it->second);
+  }
+
+  const std::string rawname = newRawname ? (generatesOutputDir / mainClassName).string() 
+                                         : (generatesOutputDir / firstFile.stem()).string();
    
   auto jsonCPP = PrepareJsonForAllCPP(inputCodeInfo, compiler, inputCodeInfo.mainFunc, generalDecls,
                                       rawname + ToLowerCase(suffix) + ".h", threadsOrder,
@@ -1685,11 +1697,15 @@ int main(int argc, const char **argv)
   std::cout << "}" << std::endl << std::endl;
   
   std::string mainFileNameStr = fileName.string();
-  
-  if(mainFileNameStr.find("_temp.cpp") != std::string::npos)
+    
+  bool keepTempFile = false; 
+  if(auto it = params.find("-keep-temp-file"); it != params.end()) {
+    keepTempFile = atoi(it->second.c_str()) != 0;
+  }
+  if(!keepTempFile && mainFileNameStr.find("_temp.cpp") != std::string::npos)
   {
     std::cout << "(10) Removing tmp file " << mainFileNameStr.c_str() << std::endl;
-  //  std::filesystem::remove(fileName);
+    std::filesystem::remove(fileName);
   }
 
   std::cout << "(10) Finished! " << std::endl;  

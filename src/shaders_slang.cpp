@@ -1267,6 +1267,7 @@ void kslicer::SlangCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, cons
     }
 
     buildSH << "slangc " << outFileName.c_str() << targetString.c_str() << kernelName.c_str() << targetSuffix.c_str() << " -I.. ";
+    buildSH << "-I" << a_codeInfo->sourceRootPath.string() << " ";
     for(auto folder : ignoreFolders)
       buildSH << "-I" << folder.string().c_str() << " ";
     if(a_settings.auxShaderCCOptions != "")
@@ -1290,8 +1291,9 @@ void kslicer::SlangCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, cons
       outFilePath = shaderPath / outFileName;
       kslicer::ApplyJsonToTemplate(templatePathUpdInd.c_str(), outFilePath, currKerneJson);
       buildSH << "slangc " << outFileName.c_str() << targetString.c_str() << kernelName.c_str() << "_UpdateIndirect" << targetSuffix.c_str() << " -I.. ";
+      buildSH << "-I" << a_codeInfo->sourceRootPath.string() << " ";
       for(auto folder : ignoreFolders)
-       buildSH << "-I" << folder.string().c_str() << " ";
+        buildSH << "-I" << folder.string().c_str() << " ";
       buildSH << std::endl;
     }
 
@@ -1301,8 +1303,9 @@ void kslicer::SlangCompiler::GenerateShaders(nlohmann::json& a_kernelsJson, cons
       outFilePath = shaderPath / outFileName;
       kslicer::ApplyJsonToTemplate(templatePathRedFin.c_str(), outFilePath, currKerneJson);
       buildSH << "slangc " << outFileName.c_str() << targetString.c_str() << kernelName.c_str() << "_Reduction" << targetSuffix.c_str() << " -I.. ";
+      buildSH << "-I" << a_codeInfo->sourceRootPath.string() << " ";
       for(auto folder : ignoreFolders)
-       buildSH << "-I" << folder.string().c_str() << " ";
+        buildSH << "-I" << folder.string().c_str() << " ";
       buildSH << std::endl;
     }
   }
